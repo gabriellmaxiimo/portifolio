@@ -1,9 +1,10 @@
 import React from 'react';
+import cruzeiroLogo from '../../cruzeiro-ec-logo.svg';
 
 export default function CruzeiroLogo({ className }) {
   return (
     <img
-      src="\cruzeiro-ec-logo.svg"
+      src={cruzeiroLogo}
       alt="Cruzeiro Esporte Clube"
       className={`object-contain ${className}`}
     />

@@ -208,7 +208,14 @@ export default function App() {
 
       <main className="flex-1 overflow-y-auto px-6 lg:px-12 py-8 flex flex-col z-10 scrollbar-hide relative">
         <div className="w-full max-w-5xl mx-auto my-auto py-4">
-          {activeTabIndex === 0 && <About currentT={currentT} themeClasses={themeClasses} stack={stack} />}
+          {activeTabIndex === 0 && (
+            <About
+              currentT={currentT}
+              themeClasses={themeClasses}
+              stack={stack}
+              onOpenCruzeiro={() => setActiveTabIndex(5)}
+            />
+          )}
           {activeTabIndex === 1 && <Projects currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 2 && <Experiences currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 3 && <Resume currentT={currentT} themeClasses={themeClasses} />}

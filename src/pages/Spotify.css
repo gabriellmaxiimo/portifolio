@@ -1,0 +1,101 @@
+.spotify-page {
+  --brand: #1db954;
+  --brand-deep: #116329;
+  --foreground: #f8fafc;
+  --muted: #cbd5e1;
+  --border: rgb(255 255 255 / 14%);
+  --surface-muted: rgb(255 255 255 / 8%);
+  --card-surface: rgb(255 255 255 / 5%);
+  --control-surface: #101827;
+  --skeleton-start: #1e293b;
+  --skeleton-mid: #334155;
+}
+
+.spotify-page-icon {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  color: #1db954;
+  background: rgb(29 185 84 / 12%);
+  border: 1px solid rgb(29 185 84 / 30%);
+  border-radius: 50%;
+  font-size: 1.5rem;
+}
+
+.spotify-page[data-theme="Escuro"] {
+  --foreground: #f3f4f6;
+  --muted: #d1d5db;
+  --border: rgb(156 163 175 / 30%);
+  --surface-muted: rgb(0 0 0 / 50%);
+  --card-surface: rgb(0 0 0 / 50%);
+  --skeleton-start: #27272a;
+  --skeleton-mid: #3f3f46;
+}
+
+.spotify-page[data-theme="Claro"] {
+  --foreground: #111827;
+  --muted: #4b5563;
+  --border: rgb(107 114 128 / 25%);
+  --surface-muted: rgb(15 23 42 / 6%);
+  --card-surface: rgb(255 255 255 / 65%);
+  --control-surface: #ffffff;
+  --skeleton-start: #e2e8f0;
+  --skeleton-mid: #f8fafc;
+}
+
+.spotify-page[data-theme="Cyberpunk"] {
+  --brand: #00f0ff;
+  --brand-deep: #101024;
+  --foreground: #ffffff;
+  --muted: #d4d4e8;
+  --border: rgb(255 0 255 / 35%);
+  --surface-muted: rgb(255 0 255 / 8%);
+  --card-surface: rgb(5 5 5 / 80%);
+  --control-surface: #0a000a;
+  --skeleton-start: #1a001a;
+  --skeleton-mid: #17252a;
+}
+
+.spotify-page[data-theme="Cruzeiro"] {
+  --foreground: #ffffff;
+  --muted: #dbeafe;
+  --border: rgb(255 255 255 / 22%);
+  --surface-muted: rgb(255 255 255 / 10%);
+  --card-surface: rgb(255 255 255 / 10%);
+  --control-surface: #003b78;
+  --skeleton-start: #003b78;
+  --skeleton-mid: #075bb5;
+}
+
+.spotify-page .spt {
+  color: var(--foreground);
+}
+
+.spotify-page .spt-card,
+.spotify-page .spt-card-img {
+  background: var(--card-surface);
+  border-color: var(--border);
+  backdrop-filter: blur(20px);
+}
+
+.spotify-page .spt-skeleton span {
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-start) 25%,
+    var(--skeleton-mid) 50%,
+    var(--skeleton-start) 75%
+  );
+  background-size: 200% 100%;
+}
+
+.spotify-page .spt-cards-intro code {
+  color: var(--foreground);
+}
+
+@media (max-width: 767px) {
+  .spotify-page-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+}

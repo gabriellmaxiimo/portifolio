@@ -1,19 +1,28 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
+
+// 1. Import do Gemini
 import { handleGemini, GEMINI_PATH } from "./GeminiAPI/api/_gemini.js";
 
-// No npm run dev (e no npm run preview), a rota /api/gemini é atendida por
-// este middleware. Em produção, quem atende é a Vercel Function api/gemini.js.
-// Assim a GEMINI_API_KEY fica só no servidor e nunca vai para o navegador.
+// 2. Import do Spotify (com o caminho correto na pasta SpotifyAPI)
+import {
+  CALLBACK_PATH,
+  handleCallback,
+  handleLogin,
+  handleSpotify,
+  LOGIN_PATH,
+  SPOTIFY_PATH,
+} from "./SpotifyAPI/api/_spotify.js";
+
+// Middleware do Gemini
 function geminiApi(env) {
   const middleware = (req, res, next) => {
-    if (new URL(req.url, "http://localhost").pathname !== GEMINI_PATH) return next();
+    if (new URL(req.url, "http://127.0.0.1:5173").pathname !== GEMINI_PATH) return next();
     handleGemini(req, res, env).catch(next);
   };
 
   return {
     name: "gemini-api",
-    // Chaves { } de propósito: se a função devolver algo, o Vite o executa depois
     configureServer(server) {
       server.middlewares.use(middleware);
     },
@@ -23,13 +32,39 @@ function geminiApi(env) {
   };
 }
 
-// https://vite.dev/config/
+// Middleware do Spotify
+function spotifyApi(env) {
+  const middleware = (req, res, next) => {
+    const url = new URL(req.url, "http://127.0.0.1:5173");
+    if (url.pathname === LOGIN_PATH) return handleLogin(req, res, env);
+    if (url.pathname === CALLBACK_PATH) return handleCallback(req, res, env).catch(next);
+    if (url.pathname !== SPOTIFY_PATH) return next();
+    handleSpotify(req, res, env).catch(next);
+  };
+
+  return {
+    name: "spotify-api",
+    configureServer(server) {
+      server.middlewares.use(middleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware);
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
-  // Prefixo "" lê TODAS as variáveis do .env.local, inclusive as sem VITE_.
-  // Isso não as expõe: para o navegador continuam indo só as VITE_*.
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    plugins: [react(), geminiApi(env)],
+    plugins: [react(), geminiApi(env), spotifyApi(env)],
+    server: {
+      host: "127.0.0.1",
+      port: 5173,
+    },
+    preview: {
+      host: "127.0.0.1",
+      port: 5173,
+    },
   };
 });

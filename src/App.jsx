@@ -13,11 +13,12 @@ import Experiences from './pages/Experiences';
 import Resume from './pages/Resume';
 import Contact from './pages/Contact';
 import Cruzeiro from './pages/Cruzeiro';
+import Spotify from './pages/Spotify';
 
 export default function App() {
   const [time, setTime] = useState('');
   const [language, setLanguage] = useState('PT');
-  const [theme, setTheme] = useState('Original');
+  const [theme, setTheme] = useState('Cyberpunk');
   const [activeTabIndex, setActiveTabIndex] = useState(0); 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -35,13 +36,21 @@ export default function App() {
 
   const t = {
     PT: {
-      tabs: ['Sobre Mim', 'Projetos', 'Experiências', 'Currículo', 'Contato', 'Cruzeiro'],
+      tabs: ['Sobre Mim', 'Projetos', 'Experiências', 'Currículo', 'Contato', 'Cruzeiro', 'Spotify'],
       settings: 'Definições',
       lang: 'Idioma',
       theme: 'Tema',
-      themes: ['Escuro', 'Claro', 'Cyberpunk', 'Cruzeiro', 'Original'],
+      themes: ['Cyberpunk', 'Escuro', 'Claro', 'Cruzeiro', 'Original'],
       searchPlaceholder: 'Pesquisar...',
       aboutTitle: 'Sobre Mim',
+      lastTrackTitle: 'Última música tocada',
+      openSpotifyLabel: 'Abrir aba do Spotify',
+      trackPlaying: 'Tocando agora',
+      trackPlayed: 'Tocou',
+      trackLoading: 'Carregando música...',
+      noRecentTrack: 'Nenhuma música recente encontrada',
+      trackUnavailable: 'Não foi possível carregar a música do Spotify.',
+      retry: 'Tentar novamente',
       aboutText: 'Olá, sou o Gabriel Máximo de Castro. Graduando em Engenharia de Software na PUC Minas – Coração Eucarístico. Possuo forte foco em desenvolvimento de software com experiência em Java (Core e POO), Spring Boot, estruturas de dados, além de sólidos conhecimentos em redes, sistemas operacionais e hardware. Sou apaixonado por tecnologia, proativo, analítico e, claro, fanático pelo Cruzeiro Esporte Clube!',
       stackTitle: 'Foco (Stack & Tecnologias)',
       projectsTitle: 'Projetos de Destaque',
@@ -67,13 +76,21 @@ export default function App() {
       searchResultsTitle: 'Resultados da Pesquisa'
     },
     EN: {
-      tabs: ['About Me', 'Projects', 'Experiences', 'Resume', 'Contact', 'Cruzeiro'],
+      tabs: ['About Me', 'Projects', 'Experiences', 'Resume', 'Contact', 'Cruzeiro', 'Spotify'],
       settings: 'Settings',
       lang: 'Language',
       theme: 'Theme',
-      themes: ['Escuro', 'Claro', 'Cyberpunk', 'Cruzeiro', 'Original'],
+      themes: ['Cyberpunk', 'Escuro', 'Claro', 'Cruzeiro', 'Original'],
       searchPlaceholder: 'Search...',
       aboutTitle: 'About Me',
+      lastTrackTitle: 'Last played track',
+      openSpotifyLabel: 'Open Spotify tab',
+      trackPlaying: 'Playing now',
+      trackPlayed: 'Played',
+      trackLoading: 'Loading track...',
+      noRecentTrack: 'No recent track found',
+      trackUnavailable: 'Could not load the Spotify track.',
+      retry: 'Try again',
       aboutText: 'Hello, I am Gabriel Máximo de Castro. Software Engineering undergraduate at PUC Minas. Focused on software development with expertise in Java (Core & OOP), Spring Boot, data structures, networks, operating systems, and hardware. Passionate about technology, analytical, proactive, and a huge fan of Cruzeiro Esporte Clube!',
       stackTitle: 'Focus (Stack & Technologies)',
       projectsTitle: 'Featured Projects',
@@ -214,6 +231,7 @@ export default function App() {
               themeClasses={themeClasses}
               stack={stack}
               onOpenCruzeiro={() => setActiveTabIndex(5)}
+              onOpenSpotify={() => setActiveTabIndex(6)}
             />
           )}
           {activeTabIndex === 1 && <Projects currentT={currentT} themeClasses={themeClasses} />}
@@ -221,6 +239,7 @@ export default function App() {
           {activeTabIndex === 3 && <Resume currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 4 && <Contact currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 5 && <Cruzeiro theme={theme} themeClasses={themeClasses} />}
+          {activeTabIndex === 6 && <Spotify theme={theme} themeClasses={themeClasses} />}
         </div>
       </main>
 

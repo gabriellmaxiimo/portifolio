@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle, AlertCircle, Globe, ExternalLink } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import { FaGithub, FaInstagram, FaLinkedin } from 'react-icons/fa';
 import emailjs from '@emailjs/browser';
 
 export default function Contact({ currentT, themeClasses }) {
@@ -88,14 +89,14 @@ export default function Contact({ currentT, themeClasses }) {
       </form>
       
       <div className="mt-8 flex justify-center items-center gap-4 flex-wrap">
-        <a href="https://github.com/gabriellmaxiimo" target="_blank" rel="noreferrer" className={`px-4 py-2 rounded-xl text-xs flex items-center gap-2 ${themeClasses.glass} ${themeClasses.hover}`}>
-          <Globe size={16} /> GitHub <ExternalLink size={12} className="opacity-50" />
+        <a href="https://github.com/gabriellmaxiimo" target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-xl text-xs flex items-center gap-2 ${themeClasses.glass} ${themeClasses.hover}`}>
+          <FaGithub size={16} aria-hidden="true" /> GitHub <ExternalLink size={12} className="opacity-50" aria-hidden="true" />
         </a>
-        <a href="https://www.linkedin.com/in/gabriellmaxiimo/" target="_blank" rel="noreferrer" className={`px-4 py-2 rounded-xl text-xs flex items-center gap-2 ${themeClasses.glass} ${themeClasses.hover}`}>
-          <Globe size={16} /> LinkedIn <ExternalLink size={12} className="opacity-50" />
+        <a href="https://www.linkedin.com/in/gabriellmaxiimo/" target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-xl text-xs flex items-center gap-2 ${themeClasses.glass} ${themeClasses.hover}`}>
+          <FaLinkedin size={16} aria-hidden="true" /> LinkedIn <ExternalLink size={12} className="opacity-50" aria-hidden="true" />
         </a>
-        <a href="https://www.instagram.com/gmaxiimo" target="_blank" rel="noreferrer" className={`px-4 py-2 rounded-xl text-xs flex items-center gap-2 ${themeClasses.glass} ${themeClasses.hover}`}>
-          <Globe size={16} /> Instagram <ExternalLink size={12} className="opacity-50" />
+        <a href="https://www.instagram.com/gmaxiimo" target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-xl text-xs flex items-center gap-2 ${themeClasses.glass} ${themeClasses.hover}`}>
+          <FaInstagram size={16} aria-hidden="true" /> Instagram <ExternalLink size={12} className="opacity-50" aria-hidden="true" />
         </a>
       </div>
     </div>

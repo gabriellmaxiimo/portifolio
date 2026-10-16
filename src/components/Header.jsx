@@ -111,7 +111,7 @@ export default function Header({
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-2">{currentT.theme}</p>
                 <div className="flex flex-col gap-1">
-                  {['Escuro', 'Claro', 'Cyberpunk', 'Cruzeiro', 'Original'].map((tName, i) => (
+                  {['Cyberpunk', 'Escuro', 'Claro', 'Cruzeiro', 'Original'].map((tName, i) => (
                     <button key={tName} onClick={() => { setTheme(tName); setIsSettingsOpen(false); }} className={`text-left text-xs px-3 py-2 rounded transition-all ${theme === tName ? 'bg-current/10 font-bold' : 'opacity-60 hover:opacity-100 hover:bg-current/5'}`}>
                       {currentT.themes[i]}
                     </button>

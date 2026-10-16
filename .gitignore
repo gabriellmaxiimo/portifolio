@@ -1,0 +1,9 @@
+# Dependências
+node_modules/
+dist/
+
+# Variáveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+vite.env

@@ -12,6 +12,7 @@ import Projects from './pages/Projects';
 import Experiences from './pages/Experiences';
 import Resume from './pages/Resume';
 import Contact from './pages/Contact';
+import Cruzeiro from './pages/Cruzeiro';
 
 export default function App() {
   const [time, setTime] = useState('');
@@ -34,7 +35,7 @@ export default function App() {
 
   const t = {
     PT: {
-      tabs: ['Sobre Mim', 'Projetos', 'Experiências', 'Currículo', 'Contato'],
+      tabs: ['Sobre Mim', 'Projetos', 'Experiências', 'Currículo', 'Contato', 'Cruzeiro'],
       settings: 'Definições',
       lang: 'Idioma',
       theme: 'Tema',
@@ -66,7 +67,7 @@ export default function App() {
       searchResultsTitle: 'Resultados da Pesquisa'
     },
     EN: {
-      tabs: ['About Me', 'Projects', 'Experiences', 'Resume', 'Contact'],
+      tabs: ['About Me', 'Projects', 'Experiences', 'Resume', 'Contact', 'Cruzeiro'],
       settings: 'Settings',
       lang: 'Language',
       theme: 'Theme',
@@ -212,6 +213,7 @@ export default function App() {
           {activeTabIndex === 2 && <Experiences currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 3 && <Resume currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 4 && <Contact currentT={currentT} themeClasses={themeClasses} />}
+          {activeTabIndex === 5 && <Cruzeiro theme={theme} themeClasses={themeClasses} />}
         </div>
       </main>
 

@@ -2,6 +2,48 @@ import React, { useState } from 'react';
 import { Search, Settings, User, Gamepad2, ChevronRight, X } from 'lucide-react';
 import CruzeiroLogo from './CruzeiroLogo';
 
+function SearchResultsPanel({ currentT, searchResults, themeClasses, onSelect }) {
+  return (
+    <div className={`absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto rounded-2xl ${themeClasses.solidBg} border shadow-2xl z-50 p-3 flex flex-col gap-3 animate-fade-in custom-scrollbar`}>
+      <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 px-2">{currentT.searchResultsTitle}</span>
+
+      {searchResults.about && (
+        <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(0)} className="w-full text-left p-2.5 rounded-xl hover:bg-current/10 transition-colors">
+          <span className="block text-xs font-bold">{currentT.aboutTitle}</span>
+          <span className="block text-[11px] opacity-70 truncate">{currentT.aboutText}</span>
+        </button>
+      )}
+
+      {searchResults.stack.length > 0 && (
+        <div className="p-2.5 rounded-xl bg-current/5">
+          <p className="text-[10px] uppercase font-bold opacity-50 mb-1">{currentT.stackTitle}</p>
+          <div className="flex flex-wrap gap-1">
+            {searchResults.stack.map((item) => (
+              <button key={item} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(0)} className="text-[11px] px-2 py-0.5 rounded bg-current/10 hover:bg-current/20">
+                {item}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {searchResults.projects.map((project, index) => (
+        <button key={index} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(1)} className="w-full text-left p-2.5 rounded-xl hover:bg-current/10 transition-colors">
+          <span className="block text-xs font-bold">{project.name}</span>
+          <span className="block text-[11px] opacity-70 truncate">{project.desc}</span>
+        </button>
+      ))}
+
+      {searchResults.exp.map((experience, index) => (
+        <button key={index} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => onSelect(2)} className="w-full text-left p-2.5 rounded-xl hover:bg-current/10 transition-colors">
+          <span className="block text-xs font-bold">{experience.role} {experience.company}</span>
+          <span className="block text-[11px] opacity-70 truncate">{experience.desc}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Header({
   theme,
   themeClasses,
@@ -17,23 +59,29 @@ export default function Header({
   setTheme
 }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+  const selectSearchResult = (tabIndex) => {
+    setActiveTabIndex(tabIndex);
+    setIsSearchFocused(false);
+    setIsMobileSearchOpen(false);
+  };
+
   return (
-    <header className="flex-none px-6 lg:px-12 py-6 flex justify-between items-center z-40 relative">
-      <div className="flex items-center gap-4">
+    <header className="flex-none px-4 sm:px-6 lg:px-12 py-4 sm:py-6 flex justify-between items-center gap-3 z-40 relative">
+      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
         {theme === 'Cruzeiro' ? (
-          <CruzeiroLogo className="w-8 h-8 drop-shadow-lg" />
+          <CruzeiroLogo className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 drop-shadow-lg" />
         ) : (
-          <Gamepad2 className={`w-8 h-8 ${themeClasses.accent}`} />
+          <Gamepad2 className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 ${themeClasses.accent}`} />
         )}
-        <span className="text-xs md:text-sm font-bold tracking-[0.2em] uppercase">GABRIEL MÁXIMO</span>
+        <span className="truncate text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.12em] sm:tracking-[0.2em] uppercase">GABRIEL MÁXIMO</span>
       </div>
 
-      <div className="flex items-center gap-4 md:gap-6">
-        <div className="relative">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-full ${themeClasses.glass} focus-within:ring-1 ring-current/50 transition-all`}>
+      <div className="hidden sm:block relative shrink">
+        <div className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full ${themeClasses.glass} focus-within:ring-1 ring-current/50 transition-all`}>
             <Search className="w-4 h-4 opacity-60" />
             <input
               type="text"
@@ -42,7 +90,7 @@ export default function Header({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-              className="bg-transparent border-none outline-none text-xs w-32 md:w-48 focus:w-60 transition-all placeholder:opacity-50"
+              className="min-w-0 bg-transparent border-none outline-none text-xs w-24 md:w-40 focus:w-52 transition-all placeholder:opacity-50"
             />
             {searchQuery && (
               <X className="w-3.5 h-3.5 opacity-50 cursor-pointer hover:opacity-100" onClick={() => setSearchQuery('')} />
@@ -50,49 +98,58 @@ export default function Header({
           </div>
 
           {isSearchFocused && hasSearchResults && (
-            <div className={`absolute top-12 right-0 w-80 max-h-96 overflow-y-auto rounded-2xl ${themeClasses.solidBg} border shadow-2xl z-50 p-3 flex flex-col gap-3 animate-fade-in custom-scrollbar`}>
-              <span className="text-[10px] font-bold uppercase tracking-widest opacity-50 px-2">{currentT.searchResultsTitle}</span>
-              
-              {searchResults.about && (
-                <div onClick={() => setActiveTabIndex(0)} className="p-2.5 rounded-xl hover:bg-current/10 cursor-pointer transition-colors">
-                  <p className="text-xs font-bold">{currentT.aboutTitle}</p>
-                  <p className="text-[11px] opacity-70 truncate">{currentT.aboutText}</p>
-                </div>
+            <SearchResultsPanel currentT={currentT} searchResults={searchResults} themeClasses={themeClasses} onSelect={selectSearchResult} />
+          )}
+      </div>
+
+      <div className="flex shrink-0 items-center gap-0.5 sm:gap-2 text-sm relative">
+        <div className="relative sm:hidden">
+          <button
+            type="button"
+            aria-label={currentT.searchPlaceholder}
+            aria-expanded={isMobileSearchOpen}
+            className="p-2 rounded-full opacity-70 hover:opacity-100 hover:bg-current/10 transition-colors"
+            onClick={() => {
+              setIsMobileSearchOpen((open) => !open);
+              setIsSearchFocused(true);
+            }}
+          >
+            {isMobileSearchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+          </button>
+          {isMobileSearchOpen && (
+            <div className="absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] z-50">
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-full ${themeClasses.glass} focus-within:ring-1 ring-current/50 transition-all`}>
+                <Search className="w-4 h-4 shrink-0 opacity-60" />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder={currentT.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  className="min-w-0 flex-1 bg-transparent border-none outline-none text-xs placeholder:opacity-50"
+                />
+                {searchQuery && (
+                  <button type="button" aria-label={currentT.searchPlaceholder} onClick={() => setSearchQuery('')} className="p-1 opacity-60 hover:opacity-100">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+              {isSearchFocused && hasSearchResults && (
+                <SearchResultsPanel currentT={currentT} searchResults={searchResults} themeClasses={themeClasses} onSelect={selectSearchResult} />
               )}
-
-              {searchResults.stack.length > 0 && (
-                <div className="p-2.5 rounded-xl bg-current/5">
-                  <p className="text-[10px] uppercase font-bold opacity-50 mb-1">{currentT.stackTitle}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {searchResults.stack.map(s => (
-                      <span key={s} className="text-[11px] px-2 py-0.5 rounded bg-current/10">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {searchResults.projects.map((p, idx) => (
-                <div key={idx} onClick={() => setActiveTabIndex(1)} className="p-2.5 rounded-xl hover:bg-current/10 cursor-pointer transition-colors">
-                  <p className="text-xs font-bold">{p.name}</p>
-                  <p className="text-[11px] opacity-70 truncate">{p.desc}</p>
-                </div>
-              ))}
-
-              {searchResults.exp.map((e, idx) => (
-                <div key={idx} onClick={() => setActiveTabIndex(2)} className="p-2.5 rounded-xl hover:bg-current/10 cursor-pointer transition-colors">
-                  <p className="text-xs font-bold">{e.role} {e.company}</p>
-                  <p className="text-[11px] opacity-70 truncate">{e.desc}</p>
-                </div>
-              ))}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-sm relative">
-          <User className="w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer transition-opacity" onClick={() => { setIsProfileOpen(!isProfileOpen); setIsSettingsOpen(false); }} />
-          <Settings className="w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer transition-opacity" onClick={() => { setIsSettingsOpen(!isSettingsOpen); setIsProfileOpen(false); }} />
-          
-          <span className="font-mono text-xs md:text-sm tracking-widest opacity-90 ml-2 border-l border-current/20 pl-4">
+        <button type="button" aria-label={currentT.quickLinks} title={currentT.quickLinks} className="p-2 rounded-full opacity-70 hover:opacity-100 hover:bg-current/10 transition-colors" onClick={() => { setIsProfileOpen(!isProfileOpen); setIsSettingsOpen(false); }}>
+          <User className="w-5 h-5" />
+        </button>
+        <button type="button" aria-label={currentT.settings} title={currentT.settings} className="p-2 rounded-full opacity-70 hover:opacity-100 hover:bg-current/10 transition-colors" onClick={() => { setIsSettingsOpen(!isSettingsOpen); setIsProfileOpen(false); }}>
+          <Settings className="w-5 h-5" />
+        </button>
+
+          <span className="hidden md:inline font-mono text-xs tracking-widest opacity-90 ml-1 border-l border-current/20 pl-3">
             {time}
           </span>
 
@@ -149,7 +206,6 @@ export default function Header({
             </div>
           )}
         </div>
-      </div>
     </header>
   );
 }

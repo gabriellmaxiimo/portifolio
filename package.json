@@ -1,0 +1,30 @@
+{
+  "name": "meu-portfolio",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^5.0.3",
+    "@google/genai": "^2.30.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "dotenv": "^18.0.8",
+    "lucide-react": "^1.57.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.30",
+    "tailwindcss": "^4.3.3",
+    "vite": "^5.3.4"
+  }
+}

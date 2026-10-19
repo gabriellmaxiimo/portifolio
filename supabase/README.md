@@ -1,7 +1,9 @@
 # Catálogo de filmes, séries e animes
 
 As páginas buscam o catálogo no TMDB e no AniList. As avaliações inteiras de
-0 a 100 e a lista pessoal são persistidas em `public.media_ratings`; os títulos consultados
+0 a 100 e os estados da lista pessoal (`watchlist` para “Minha lista” e
+`want_to_watch` para “Quero assistir”) são persistidos em `public.media_ratings`;
+os títulos consultados
 pela conta administradora são guardados em `public.media_catalog_cache` como
 cache de contingência. Qualquer visitante pode ler as avaliações e o cache;
 apenas usuários autenticados incluídos em `public.media_admins` podem alterá-los.

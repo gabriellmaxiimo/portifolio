@@ -6,10 +6,42 @@ create table if not exists public.media_ratings (
   release_year integer,
   overview text not null default '',
   score smallint,
-  in_watchlist boolean not null default false,
+  watchlist_status text,
   updated_at timestamptz not null default now(),
   primary key (provider, catalog_id)
 );
+
+alter table public.media_ratings
+  add column if not exists watchlist_status text;
+
+alter table public.media_ratings
+  drop constraint if exists media_ratings_watchlist_status_check;
+
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'media_ratings'
+      and column_name = 'in_watchlist'
+  ) then
+    execute $migration$
+      update public.media_ratings
+      set watchlist_status = 'watchlist'
+      where in_watchlist = true and watchlist_status is null
+    $migration$;
+  end if;
+end
+$$;
+
+update public.media_ratings
+set watchlist_status = 'want_to_watch'
+where watchlist_status = 'up_next';
+
+alter table public.media_ratings
+  add constraint media_ratings_watchlist_status_check
+  check (watchlist_status in ('watchlist', 'want_to_watch'));
 
 alter table public.media_ratings
   drop constraint if exists media_ratings_score_check;

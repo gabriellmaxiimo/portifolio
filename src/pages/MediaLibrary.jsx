@@ -33,7 +33,7 @@ function normalizeTmdb(item, type, savedRatings) {
     popularity: item.popularity ?? 0,
     score: rating?.score ?? 0,
     rated: Boolean(rating) && rating.score !== null,
-    inWatchlist: rating?.in_watchlist ?? false,
+    watchlistStatus: rating?.watchlist_status ?? null,
     externalUrl: `https://www.themoviedb.org/${type}/${item.id}`,
   };
 }
@@ -52,7 +52,7 @@ function normalizeAnime(item, savedRatings) {
     popularity: item.popularity ?? 0,
     score: rating?.score ?? 0,
     rated: Boolean(rating) && rating.score !== null,
-    inWatchlist: rating?.in_watchlist ?? false,
+    watchlistStatus: rating?.watchlist_status ?? null,
     externalUrl: item.siteUrl,
   };
 }
@@ -154,29 +154,32 @@ function MediaCard({ item, canEdit, onRate, onWatchlist, busyId }) {
                 >
                   {busy ? "Salvando..." : "Salvar nota"}
                 </button>
-                {item.rated && (
-                  <button
-                    type="button"
-                    className="media-clear-rating"
-                    disabled={busy}
-                    onClick={() => onRate(item, null)}
-                  >
-                    Remover nota
-                  </button>
-                )}
               </div>
             </>
           )}
         </div>
         {canEdit && (
-          <button
-            type="button"
-            className="media-watchlist-button"
-            disabled={busy}
-            onClick={() => onWatchlist(item, !item.inWatchlist)}
-          >
-            {item.inWatchlist ? "Remover da minha lista" : "Adicionar à minha lista"}
-          </button>
+          <div className="media-watchlist-actions" aria-label={`Listas pessoais: ${item.title}`}>
+            {[
+              { value: "watchlist", label: "Minha lista" },
+              { value: "want_to_watch", label: "Quero assistir" },
+            ].map((option) => {
+              const selected = item.watchlistStatus === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`media-watchlist-button${selected ? " active" : ""}`}
+                  disabled={busy}
+                  aria-pressed={selected}
+                  onClick={() => onWatchlist(item, selected ? null : option.value)}
+                >
+                  {selected && <span aria-hidden="true">✓ </span>}
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
     </article>
@@ -329,7 +332,15 @@ export default function MediaLibrary({ kind, themeClasses }) {
     [ratings]
   );
   const watchlistItems = useMemo(
-    () => ratings.filter((item) => item.in_watchlist),
+    () => ratings
+      .filter((item) => item.watchlist_status === "watchlist")
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)),
+    [ratings]
+  );
+  const upNextItems = useMemo(
+    () => ratings
+      .filter((item) => item.watchlist_status === "want_to_watch")
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)),
     [ratings]
   );
 
@@ -376,13 +387,13 @@ export default function MediaLibrary({ kind, themeClasses }) {
     }
   };
 
-  const updateWatchlist = async (item, inWatchlist) => {
+  const updateWatchlist = async (item, watchlistStatus) => {
     if (!isAdmin) return;
     const itemKey = `${item.provider}:${item.id}`;
     setBusyId(itemKey);
     setRatingsError("");
     try {
-      await setMediaWatchlist(item, inWatchlist);
+      await setMediaWatchlist(item, watchlistStatus);
       setRatings(await fetchMediaRatings(providers));
     } catch (error) {
       setRatingsError(formatMediaStorageError(error));
@@ -417,7 +428,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
     year: rating.release_year,
     popularity: 0,
     rated: rating.score !== null,
-    inWatchlist: rating.in_watchlist,
+    watchlistStatus: rating.watchlist_status,
     externalUrl: rating.provider === "anilist"
       ? `https://anilist.co/anime/${rating.catalog_id}`
       : `https://www.themoviedb.org/${rating.provider === "tmdb_movie" ? "movie" : "tv"}/${rating.catalog_id}`,
@@ -467,7 +478,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
         <section className="media-watchlist">
           <div className="media-section-heading">
             <h2>Minha lista</h2>
-            <span>Títulos salvos para assistir</span>
+            <span>Títulos salvos</span>
           </div>
           <div className="media-grid">
             {watchlistItems.map((rating) => {
@@ -478,7 +489,35 @@ export default function MediaLibrary({ kind, themeClasses }) {
                 year: rating.release_year,
                 popularity: 0,
                 rated: rating.score !== null,
-                inWatchlist: true,
+                watchlistStatus: rating.watchlist_status,
+                externalUrl: rating.provider === "anilist"
+                  ? `https://anilist.co/anime/${rating.catalog_id}`
+                  : `https://www.themoviedb.org/${rating.provider === "tmdb_movie" ? "movie" : "tv"}/${rating.catalog_id}`,
+              };
+              return (
+                <MediaCard key={`${item.provider}:${item.id}`} item={item} canEdit={isAdmin} onRate={rateMedia} onWatchlist={updateWatchlist} busyId={busyId} />
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {upNextItems.length > 0 && (
+        <section className="media-watchlist">
+          <div className="media-section-heading">
+            <h2>Quero assistir</h2>
+            <span>Na sua fila para assistir</span>
+          </div>
+          <div className="media-grid">
+            {upNextItems.map((rating) => {
+              const item = {
+                ...rating,
+                id: rating.catalog_id,
+                posterUrl: rating.poster_url,
+                year: rating.release_year,
+                popularity: 0,
+                rated: rating.score !== null,
+                watchlistStatus: rating.watchlist_status,
                 externalUrl: rating.provider === "anilist"
                   ? `https://anilist.co/anime/${rating.catalog_id}`
                   : `https://www.themoviedb.org/${rating.provider === "tmdb_movie" ? "movie" : "tv"}/${rating.catalog_id}`,

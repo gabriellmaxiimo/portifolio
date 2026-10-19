@@ -75,7 +75,7 @@ export async function fetchMediaRatings(providers) {
   if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar as avaliações.`);
   const { data, error } = await supabase
     .from("media_ratings")
-    .select("provider, catalog_id, title, poster_url, release_year, overview, score, in_watchlist, updated_at")
+    .select("provider, catalog_id, title, poster_url, release_year, overview, score, watchlist_status, updated_at")
     .in("provider", providers)
     .order("score", { ascending: false })
     .order("updated_at", { ascending: false });
@@ -96,16 +96,18 @@ export async function saveMediaRating(media, score) {
     release_year: media.year,
     overview: media.overview,
     score,
-    in_watchlist: true,
     updated_at: new Date().toISOString(),
   }, { onConflict: "provider,catalog_id" });
   if (error) throw error;
 }
 
-export async function setMediaWatchlist(media, inWatchlist) {
+export async function setMediaWatchlist(media, watchlistStatus) {
   if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar a lista pessoal.`);
+  if (watchlistStatus !== null && !["watchlist", "want_to_watch"].includes(watchlistStatus)) {
+    throw new Error("Estado da lista inválido.");
+  }
   const identity = { provider: media.provider, catalog_id: String(media.id) };
-  if (!inWatchlist && !media.rated) {
+  if (watchlistStatus === null && !media.rated) {
     const { error } = await supabase.from("media_ratings").delete().match(identity);
     if (error) throw error;
     return;
@@ -118,7 +120,7 @@ export async function setMediaWatchlist(media, inWatchlist) {
     release_year: media.year,
     overview: media.overview,
     score: media.rated ? media.score : null,
-    in_watchlist: inWatchlist,
+    watchlist_status: watchlistStatus,
     updated_at: new Date().toISOString(),
   }, { onConflict: "provider,catalog_id" });
   if (error) throw error;

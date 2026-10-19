@@ -1,0 +1,41 @@
+.experience-typing {
+  display: flex;
+  height: 1rem;
+  align-items: center;
+  gap: 0.18rem;
+  margin-top: 0.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.experience-typing span {
+  animation: experience-typing 1.2s infinite both;
+}
+
+.experience-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.experience-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes experience-typing {
+  0%, 60%, 100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .experience-typing span {
+    animation: none;
+    opacity: 0.7;
+  }
+}

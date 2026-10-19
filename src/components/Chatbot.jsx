@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, Trash2, X } from 'lucide-react';
+import { MessageCircle, Phone, Send, Trash2, X } from 'lucide-react';
 
-export default function Chatbot({ currentT = {}, themeClasses = {} }) {
+export default function Chatbot({ currentT = {}, themeClasses = {}, onContact }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
@@ -97,15 +97,26 @@ export default function Chatbot({ currentT = {}, themeClasses = {} }) {
 
   return (
     <>
+      <button
+        type="button"
+        onClick={onContact}
+        aria-label="Ir para a guia de contatos"
+        title="Contato"
+        className={`fixed bottom-24 right-6 z-50 grid h-11 w-11 place-items-center rounded-full shadow-xl transition-all hover:scale-110 ${themeClasses.solidBg || ''}`}
+      >
+        <Phone size={18} aria-hidden="true" />
+      </button>
       <button 
+        type="button"
         onClick={() => setIsChatOpen(!isChatOpen)} 
         className={`fixed bottom-6 right-6 p-4 rounded-full shadow-2xl z-50 transition-all transform hover:scale-110 ${themeClasses.solidBg || ''}`}
+        aria-label={isChatOpen ? 'Fechar chatbot' : 'Abrir chatbot'}
       >
         {isChatOpen ? <X size={24} /> : <MessageCircle size={24} />}
       </button>
 
       {isChatOpen && (
-        <div className={`fixed bottom-24 right-6 w-[320px] md:w-[380px] h-[450px] rounded-2xl flex flex-col z-50 shadow-2xl overflow-hidden ${themeClasses.solidBg || ''} border animate-fade-in`}>
+        <div className={`fixed bottom-6 right-24 w-[min(380px,calc(100vw-7rem))] h-[min(450px,calc(100dvh-3rem))] rounded-2xl flex flex-col z-50 shadow-2xl overflow-hidden ${themeClasses.solidBg || ''} border animate-fade-in`}>
           <div className="flex justify-between items-center p-4 border-b border-current/10 bg-current/5">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />

@@ -22,6 +22,7 @@ export default function App() {
   const [theme, setTheme] = useState('Cyberpunk');
   const [activeTabIndex, setActiveTabIndex] = useState(0); 
   const [searchQuery, setSearchQuery] = useState('');
+  const [mediaType, setMediaType] = useState('movie');
 
   useEffect(() => {
     const updateTime = () => {
@@ -61,7 +62,7 @@ export default function App() {
       ],
       expTitle: 'Experiências',
       exp: [
-        { role: 'Auxiliar de Serviços Administrativos', company: 'PUC Minas - IFTDJ', desc: 'Gestão de processos académicos, organização e suporte administrativo.' }
+        { role: 'Auxiliar de Serviços Administrativos', company: 'PUC Minas - IFTDJ', period: 'Dez/2024 – Atual', desc: 'Gestão de processos académicos, organização e suporte administrativo.' }
       ],
       contactTitle: 'Contato',
       resumeTitle: 'Currículo',
@@ -101,7 +102,7 @@ export default function App() {
       ],
       expTitle: 'Experiences',
       exp: [
-        { role: 'Administrative Services Assistant', company: 'PUC Minas - IFTDJ', desc: 'Management of academic processes and administrative support.' }
+        { role: 'Administrative Services Assistant', company: 'PUC Minas - IFTDJ', period: 'Dec/2024 – Present', desc: 'Management of academic processes and administrative support.' }
       ],
       contactTitle: 'Contact',
       resumeTitle: 'Resume',
@@ -119,7 +120,7 @@ export default function App() {
   };
 
   const currentT = t[language];
-  const stack = ['Java (Core e POO)', 'Spring Boot', 'SQL', 'Redes (TCP/IP, DNS, DHCP)', 'Sistemas Operacionais (Windows/Terminal)', 'Hardware & Manutenção', 'Git'];
+  const stack = ['Java (Core e POO)', 'Spring Boot', 'React', 'Docker', 'Postman', 'SQL', 'Redes (TCP/IP, DNS, DHCP)', 'Sistemas Operacionais (Windows/Terminal)', 'Hardware & Manutenção', 'Git'];
 
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return { projects: [], exp: [], stack: [], about: false };
@@ -233,6 +234,10 @@ export default function App() {
               stack={stack}
               onOpenCruzeiro={() => setActiveTabIndex(5)}
               onOpenSpotify={() => setActiveTabIndex(6)}
+              onOpenMedia={(type) => {
+                setMediaType(type);
+                setActiveTabIndex(7);
+              }}
             />
           )}
           {activeTabIndex === 1 && <Projects currentT={currentT} themeClasses={themeClasses} />}
@@ -241,11 +246,11 @@ export default function App() {
           {activeTabIndex === 4 && <Contact currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 5 && <Cruzeiro theme={theme} themeClasses={themeClasses} />}
           {activeTabIndex === 6 && <Spotify theme={theme} themeClasses={themeClasses} />}
-          {activeTabIndex === 7 && <MediaLibrary themeClasses={themeClasses} />}
+          {activeTabIndex === 7 && <MediaLibrary themeClasses={themeClasses} type={mediaType} setType={setMediaType} />}
         </div>
       </main>
 
-      <Chatbot currentT={currentT} themeClasses={themeClasses} />
+      <Chatbot currentT={currentT} themeClasses={themeClasses} onContact={() => setActiveTabIndex(4)} />
     </div>
   );
 }

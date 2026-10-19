@@ -1,6 +1,31 @@
-import React, { useState } from 'react';
-import { Search, Settings, User, Gamepad2, ChevronRight, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  Cloud,
+  CloudLightning,
+  CloudRain,
+  CloudSun,
+  Search,
+  Settings,
+  Sun,
+  User,
+  Gamepad2,
+  ChevronRight,
+  X,
+} from 'lucide-react';
 import CruzeiroLogo from './CruzeiroLogo';
+
+function weatherPresentation(code) {
+  if (code === 0) return { Icon: Sun, label: 'Céu limpo' };
+  if (code === 1 || code === 2) return { Icon: CloudSun, label: 'Parcialmente nublado' };
+  if (code === 3) return { Icon: Cloud, label: 'Nublado' };
+  if ([45, 48].includes(code)) return { Icon: Cloud, label: 'Neblina' };
+  if ([51, 53, 55, 56, 57].includes(code)) return { Icon: CloudRain, label: 'Garoa' };
+  if ([61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86].includes(code)) {
+    return { Icon: CloudRain, label: 'Precipitação' };
+  }
+  if ([95, 96, 99].includes(code)) return { Icon: CloudLightning, label: 'Tempestade' };
+  return { Icon: Cloud, label: 'Condição do tempo' };
+}
 
 function SearchResultsPanel({ currentT, searchResults, themeClasses, onSelect }) {
   return (
@@ -62,6 +87,44 @@ export default function Header({
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [weatherError, setWeatherError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const loadWeather = async () => {
+      try {
+        const params = new URLSearchParams({
+          latitude: '-19.9167',
+          longitude: '-43.9345',
+          current: 'temperature_2m,weather_code',
+          temperature_unit: 'celsius',
+          timezone: 'America/Sao_Paulo',
+        });
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { signal: controller.signal });
+        if (!response.ok) throw new Error(`Serviço meteorológico respondeu HTTP ${response.status}.`);
+        const data = await response.json();
+        if (!Number.isFinite(data.current?.temperature_2m) || !Number.isInteger(data.current?.weather_code)) {
+          throw new Error('O serviço meteorológico retornou dados inválidos.');
+        }
+        if (active) {
+          setWeather({ temperature: Math.round(data.current.temperature_2m), code: data.current.weather_code });
+          setWeatherError('');
+        }
+      } catch (error) {
+        if (active && error.name !== 'AbortError') setWeatherError(error.message);
+      }
+    };
+
+    loadWeather();
+    const interval = setInterval(loadWeather, 10 * 60 * 1000);
+    return () => {
+      active = false;
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, []);
 
   const selectSearchResult = (tabIndex) => {
     setActiveTabIndex(tabIndex);
@@ -71,14 +134,19 @@ export default function Header({
 
   return (
     <header className="flex-none px-4 sm:px-6 lg:px-12 py-4 sm:py-6 flex justify-between items-center gap-3 z-40 relative">
-      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+      <button
+        type="button"
+        onClick={() => setActiveTabIndex(0)}
+        aria-label="Voltar para Sobre Mim"
+        className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4 text-left"
+      >
         {theme === 'Cruzeiro' ? (
           <CruzeiroLogo className="w-7 h-7 sm:w-8 sm:h-8 shrink-0 drop-shadow-lg" />
         ) : (
           <Gamepad2 className={`w-7 h-7 sm:w-8 sm:h-8 shrink-0 ${themeClasses.accent}`} />
         )}
         <span className="truncate text-[10px] sm:text-xs md:text-sm font-bold tracking-[0.12em] sm:tracking-[0.2em] uppercase">GABRIEL MÁXIMO</span>
-      </div>
+      </button>
 
       <div className="hidden sm:block relative shrink">
         <div className={`flex items-center gap-2 px-3 md:px-4 py-2 rounded-full ${themeClasses.glass} focus-within:ring-1 ring-current/50 transition-all`}>
@@ -149,9 +217,33 @@ export default function Header({
           <Settings className="w-5 h-5" />
         </button>
 
-          <span className="hidden md:inline font-mono text-xs tracking-widest opacity-90 ml-1 border-l border-current/20 pl-3">
-            {time}
-          </span>
+          <div className="hidden md:flex items-center gap-3 ml-1 border-l border-current/20 pl-3">
+            <span className="font-mono text-xs tracking-widest opacity-90">{time}</span>
+            {weather ? (() => {
+              const { Icon, label } = weatherPresentation(weather.code);
+              return (
+                <span
+                  className="inline-flex items-center gap-1.5 text-xs opacity-80"
+                  title={weatherError
+                    ? `Belo Horizonte: ${label}, ${weather.temperature}°C. Não foi possível atualizar: ${weatherError}`
+                    : `Belo Horizonte: ${label}, ${weather.temperature}°C`}
+                  aria-label={`Clima em Belo Horizonte: ${label}, ${weather.temperature} graus Celsius`}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  <span>BH {weather.temperature}°C</span>
+                </span>
+              );
+            })() : (
+              <span
+                className="inline-flex items-center gap-1.5 text-xs opacity-60"
+                title={weatherError || 'Carregando clima de Belo Horizonte'}
+                aria-label={weatherError ? `Clima de Belo Horizonte indisponível: ${weatherError}` : 'Carregando clima de Belo Horizonte'}
+              >
+                <Cloud size={15} aria-hidden="true" />
+                <span>BH --°C</span>
+              </span>
+            )}
+          </div>
 
           {isSettingsOpen && (
             <div className={`absolute top-10 right-0 mt-2 p-5 rounded-2xl ${themeClasses.solidBg} border shadow-2xl min-w-[220px] z-50 flex flex-col gap-4 animate-fade-in`}>

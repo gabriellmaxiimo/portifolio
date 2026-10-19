@@ -188,10 +188,9 @@ function MediaCard({ item, rank, viewMode, canEdit, onRate, onRemove, onWatchlis
   );
 }
 
-export default function MediaLibrary({ themeClasses }) {
-  const [type, setType] = useState("movie");
+export default function MediaLibrary({ themeClasses, type, setType }) {
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("popular");
+  const [sort, setSort] = useState("rated");
   const [viewMode, setViewMode] = useState("grid");
   const [catalog, setCatalog] = useState([]);
   const [ratings, setRatings] = useState([]);
@@ -450,7 +449,7 @@ export default function MediaLibrary({ themeClasses }) {
       <header className="media-library-header">
         <div>
           <h1 className={`text-3xl font-light tracking-tight ${themeClasses.accent}`}>{heading}</h1>
-          <p>Avalie de 0 a 100 e confira seu ranking pessoal.</p>
+          <p>Ranking e avaliação pessoal de 0 a 100.</p>
           <div className="media-library-options">
             <div className="media-type-switch" role="group" aria-label="Tipo de catálogo">
               <button type="button" className={type === "movie" ? "active" : ""} aria-pressed={type === "movie"} onClick={() => setType("movie")}>Filmes</button>
@@ -459,10 +458,10 @@ export default function MediaLibrary({ themeClasses }) {
             </div>
             <div className="media-view-switch" role="group" aria-label="Modo de visualização">
               <button type="button" className={viewMode === "grid" ? "active" : ""} aria-label="Exibir em cards com capas" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}>
-                <LayoutGrid size={16} aria-hidden="true" /><span>Cards</span>
+                <LayoutGrid size={16} aria-hidden="true" />
               </button>
               <button type="button" className={viewMode === "list" ? "active" : ""} aria-label="Exibir em lista sem capas" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>
-                <List size={16} aria-hidden="true" /><span>Tabela</span>
+                <List size={16} aria-hidden="true" />
               </button>
             </div>
             <label className="media-sort">
@@ -571,7 +570,7 @@ export default function MediaLibrary({ themeClasses }) {
       <p className="media-attribution">
         {isAnime
           ? <>Catálogo fornecido por <a href="https://anilist.co/" target="_blank" rel="noopener noreferrer">AniList</a>.</>
-          : <>Este produto utiliza a API do <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a> e não é endossado ou certificado pelo TMDB.</>}
+          : <>Catálogo fornecido por <a href="https://www.themoviedb.org/" target="_blank" rel="noopener noreferrer">TMDB</a>.</>}
       </p>
     </section>
   );

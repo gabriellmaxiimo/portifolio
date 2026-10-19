@@ -101,9 +101,18 @@ export async function saveMediaRating(media, score) {
   if (error) throw error;
 }
 
+export async function removeMediaRating(media) {
+  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar as avaliações.`);
+  const { error } = await supabase
+    .from("media_ratings")
+    .delete()
+    .match({ provider: media.provider, catalog_id: String(media.id) });
+  if (error) throw error;
+}
+
 export async function setMediaWatchlist(media, watchlistStatus) {
   if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar a lista pessoal.`);
-  if (watchlistStatus !== null && !["watchlist", "want_to_watch"].includes(watchlistStatus)) {
+  if (watchlistStatus !== null && watchlistStatus !== "watchlist") {
     throw new Error("Estado da lista inválido.");
   }
   const identity = { provider: media.provider, catalog_id: String(media.id) };

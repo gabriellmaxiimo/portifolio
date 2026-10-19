@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { LogIn, LogOut, Search } from "lucide-react";
+import { LayoutGrid, List, LogIn, LogOut, Search } from "lucide-react";
 import {
   fetchAnilistCatalog,
   fetchMediaCatalogCache,
@@ -8,6 +8,7 @@ import {
   formatMediaStorageError,
   isMediaAdmin,
   cacheMediaCatalog,
+  removeMediaRating,
   saveMediaRating,
   signInWithGitHub,
   signOutFromSupabase,
@@ -79,7 +80,7 @@ function restoreCachedItem(item) {
   };
 }
 
-function MediaCard({ item, canEdit, onRate, onWatchlist, busyId }) {
+function MediaCard({ item, rank, viewMode, canEdit, onRate, onRemove, onWatchlist, busyId }) {
   const [draftScore, setDraftScore] = useState(String(item.rated ? item.score : 0));
   const busy = busyId === `${item.provider}:${item.id}`;
   const numericDraftScore = Number(draftScore);
@@ -98,7 +99,10 @@ function MediaCard({ item, canEdit, onRate, onWatchlist, busyId }) {
   }, [item.id, item.provider, item.rated, item.score]);
 
   return (
-    <article className="media-card">
+    <article className={`media-card${viewMode === "list" ? " media-card--list" : ""}`}>
+      {rank !== undefined && (
+        <span className="media-rank-badge" aria-label={`Posição ${rank} no Top 20`}>{rank}</span>
+      )}
       {item.posterUrl ? (
         <img className="media-poster" src={item.posterUrl} alt="" loading="lazy" />
       ) : (
@@ -154,43 +158,41 @@ function MediaCard({ item, canEdit, onRate, onWatchlist, busyId }) {
                 >
                   {busy ? "Salvando..." : "Salvar nota"}
                 </button>
+                {(item.rated || item.watchlistStatus) && (
+                  <button
+                    type="button"
+                    className="media-clear-rating"
+                    disabled={busy}
+                    title="Remover a nota e o título das listas pessoais"
+                    onClick={() => onRemove(item)}
+                  >
+                    Remover
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={`media-watchlist-button${item.watchlistStatus === "watchlist" ? " active" : ""}`}
+                  disabled={busy}
+                  aria-pressed={item.watchlistStatus === "watchlist"}
+                  onClick={() => onWatchlist(item, item.watchlistStatus === "watchlist" ? null : "watchlist")}
+                >
+                  {item.watchlistStatus === "watchlist" && <span aria-hidden="true">✓ </span>}
+                  Minha lista
+                </button>
               </div>
             </>
           )}
         </div>
-        {canEdit && (
-          <div className="media-watchlist-actions" aria-label={`Listas pessoais: ${item.title}`}>
-            {[
-              { value: "watchlist", label: "Minha lista" },
-              { value: "want_to_watch", label: "Quero assistir" },
-            ].map((option) => {
-              const selected = item.watchlistStatus === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`media-watchlist-button${selected ? " active" : ""}`}
-                  disabled={busy}
-                  aria-pressed={selected}
-                  onClick={() => onWatchlist(item, selected ? null : option.value)}
-                >
-                  {selected && <span aria-hidden="true">✓ </span>}
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
       </div>
     </article>
   );
 }
 
-export default function MediaLibrary({ kind, themeClasses }) {
-  const isAnime = kind === "anime";
+export default function MediaLibrary({ themeClasses }) {
   const [type, setType] = useState("movie");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("popular");
+  const [viewMode, setViewMode] = useState("grid");
   const [catalog, setCatalog] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [page, setPage] = useState(1);
@@ -206,6 +208,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
   const [authReady, setAuthReady] = useState(!supabase);
   const [busyId, setBusyId] = useState("");
 
+  const isAnime = type === "anime";
   const providers = isAnime
     ? ["anilist"]
     : type === "movie"
@@ -286,7 +289,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
             if (cached.length) {
               setCatalog(cached.map(restoreCachedItem));
               setHasMore(false);
-              setCatalogNotice("A API está indisponível; exibindo os últimos dados salvos.");
+              setCatalogNotice(`${error.message} Exibindo os últimos dados salvos.`);
             } else {
               setCatalogError(error.message);
             }
@@ -328,7 +331,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
     () => [...ratings]
       .filter((item) => item.score !== null)
       .sort((a, b) => b.score - a.score || new Date(b.updated_at) - new Date(a.updated_at))
-      .slice(0, 12),
+      .slice(0, 20),
     [ratings]
   );
   const watchlistItems = useMemo(
@@ -337,13 +340,6 @@ export default function MediaLibrary({ kind, themeClasses }) {
       .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)),
     [ratings]
   );
-  const upNextItems = useMemo(
-    () => ratings
-      .filter((item) => item.watchlist_status === "want_to_watch")
-      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)),
-    [ratings]
-  );
-
   const sortedCatalog = useMemo(() => {
     const items = catalog.map((item) => isAnime ? normalizeAnime(item, ratings) : normalizeTmdb(item, type, ratings));
     if (sort === "rated") {
@@ -402,6 +398,21 @@ export default function MediaLibrary({ kind, themeClasses }) {
     }
   };
 
+  const removeMedia = async (item) => {
+    if (!isAdmin) return;
+    const itemKey = `${item.provider}:${item.id}`;
+    setBusyId(itemKey);
+    setRatingsError("");
+    try {
+      await removeMediaRating(item);
+      setRatings(await fetchMediaRatings(providers));
+    } catch (error) {
+      setRatingsError(formatMediaStorageError(error));
+    } finally {
+      setBusyId("");
+    }
+  };
+
   const login = async () => {
     setAuthError("");
     try {
@@ -420,7 +431,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
     }
   };
 
-  const heading = isAnime ? "Animes" : "Filmes e Séries";
+  const heading = "Filmes, Séries e Animes";
   const ratedItems = rankedRatings.map((rating) => ({
     ...rating,
     id: rating.catalog_id,
@@ -440,6 +451,28 @@ export default function MediaLibrary({ kind, themeClasses }) {
         <div>
           <h1 className={`text-3xl font-light tracking-tight ${themeClasses.accent}`}>{heading}</h1>
           <p>Avalie de 0 a 100 e confira seu ranking pessoal.</p>
+          <div className="media-library-options">
+            <div className="media-type-switch" role="group" aria-label="Tipo de catálogo">
+              <button type="button" className={type === "movie" ? "active" : ""} aria-pressed={type === "movie"} onClick={() => setType("movie")}>Filmes</button>
+              <button type="button" className={type === "tv" ? "active" : ""} aria-pressed={type === "tv"} onClick={() => setType("tv")}>Séries</button>
+              <button type="button" className={type === "anime" ? "active" : ""} aria-pressed={type === "anime"} onClick={() => setType("anime")}>Animes</button>
+            </div>
+            <div className="media-view-switch" role="group" aria-label="Modo de visualização">
+              <button type="button" className={viewMode === "grid" ? "active" : ""} aria-label="Exibir em cards com capas" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")}>
+                <LayoutGrid size={16} aria-hidden="true" /><span>Cards</span>
+              </button>
+              <button type="button" className={viewMode === "list" ? "active" : ""} aria-label="Exibir em lista sem capas" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")}>
+                <List size={16} aria-hidden="true" /><span>Tabela</span>
+              </button>
+            </div>
+            <label className="media-sort">
+              Ordenar:
+              <select value={sort} onChange={(event) => setSort(event.target.value)}>
+                <option value="popular">Popularidade</option>
+                <option value="rated">Minha nota</option>
+              </select>
+            </label>
+          </div>
         </div>
         {authReady && (
           <div className="media-auth">
@@ -466,9 +499,9 @@ export default function MediaLibrary({ kind, themeClasses }) {
             <h2>Meus melhores avaliados</h2>
             <span>Ordenados pela sua nota</span>
           </div>
-          <div className="media-grid">
-            {ratedItems.map((item) => (
-              <MediaCard key={`${item.provider}:${item.id}`} item={item} canEdit={isAdmin} onRate={rateMedia} onWatchlist={updateWatchlist} busyId={busyId} />
+          <div className={`media-grid${viewMode === "list" ? " media-grid--list" : ""}`}>
+            {ratedItems.map((item, index) => (
+              <MediaCard key={`${item.provider}:${item.id}`} item={item} rank={index + 1} viewMode={viewMode} canEdit={isAdmin} onRate={rateMedia} onRemove={removeMedia} onWatchlist={updateWatchlist} busyId={busyId} />
             ))}
           </div>
         </section>
@@ -480,7 +513,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
             <h2>Minha lista</h2>
             <span>Títulos salvos</span>
           </div>
-          <div className="media-grid">
+          <div className={`media-grid${viewMode === "list" ? " media-grid--list" : ""}`}>
             {watchlistItems.map((rating) => {
               const item = {
                 ...rating,
@@ -495,35 +528,7 @@ export default function MediaLibrary({ kind, themeClasses }) {
                   : `https://www.themoviedb.org/${rating.provider === "tmdb_movie" ? "movie" : "tv"}/${rating.catalog_id}`,
               };
               return (
-                <MediaCard key={`${item.provider}:${item.id}`} item={item} canEdit={isAdmin} onRate={rateMedia} onWatchlist={updateWatchlist} busyId={busyId} />
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {upNextItems.length > 0 && (
-        <section className="media-watchlist">
-          <div className="media-section-heading">
-            <h2>Quero assistir</h2>
-            <span>Na sua fila para assistir</span>
-          </div>
-          <div className="media-grid">
-            {upNextItems.map((rating) => {
-              const item = {
-                ...rating,
-                id: rating.catalog_id,
-                posterUrl: rating.poster_url,
-                year: rating.release_year,
-                popularity: 0,
-                rated: rating.score !== null,
-                watchlistStatus: rating.watchlist_status,
-                externalUrl: rating.provider === "anilist"
-                  ? `https://anilist.co/anime/${rating.catalog_id}`
-                  : `https://www.themoviedb.org/${rating.provider === "tmdb_movie" ? "movie" : "tv"}/${rating.catalog_id}`,
-              };
-              return (
-                <MediaCard key={`${item.provider}:${item.id}`} item={item} canEdit={isAdmin} onRate={rateMedia} onWatchlist={updateWatchlist} busyId={busyId} />
+                <MediaCard key={`${item.provider}:${item.id}`} item={item} viewMode={viewMode} canEdit={isAdmin} onRate={rateMedia} onRemove={removeMedia} onWatchlist={updateWatchlist} busyId={busyId} />
               );
             })}
           </div>
@@ -533,22 +538,9 @@ export default function MediaLibrary({ kind, themeClasses }) {
       <section className="media-catalog">
         <div className="media-section-heading">
           <h2>{query.trim() ? "Resultados" : "Em alta"}</h2>
-          <label className="media-sort">
-            Ordenar:
-            <select value={sort} onChange={(event) => setSort(event.target.value)}>
-              <option value="popular">Popularidade</option>
-              <option value="rated">Minha nota</option>
-            </select>
-          </label>
         </div>
 
         <div className="media-controls">
-          {!isAnime && (
-            <div className="media-type-switch" role="group" aria-label="Tipo de catálogo">
-              <button type="button" className={type === "movie" ? "active" : ""} onClick={() => setType("movie")}>Filmes</button>
-              <button type="button" className={type === "tv" ? "active" : ""} onClick={() => setType("tv")}>Séries</button>
-            </div>
-          )}
           <label className="media-search">
             <Search size={17} aria-hidden="true" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Buscar ${isAnime ? "animes" : type === "movie" ? "filmes" : "séries"}...`} />
@@ -561,9 +553,9 @@ export default function MediaLibrary({ kind, themeClasses }) {
           <p className="media-status" role="status">Carregando catálogo...</p>
         ) : sortedCatalog.length ? (
           <>
-            <div className="media-grid">
+            <div className={`media-grid${viewMode === "list" ? " media-grid--list" : ""}`}>
               {sortedCatalog.map((item) => (
-                <MediaCard key={`${item.provider}:${item.id}`} item={item} canEdit={isAdmin} onRate={rateMedia} onWatchlist={updateWatchlist} busyId={busyId} />
+                <MediaCard key={`${item.provider}:${item.id}`} item={item} viewMode={viewMode} canEdit={isAdmin} onRate={rateMedia} onRemove={removeMedia} onWatchlist={updateWatchlist} busyId={busyId} />
               ))}
             </div>
             {hasMore && (

@@ -50,6 +50,12 @@ export async function handleTmdb(req, res, env = {}) {
 
   if (!response.ok) {
     console.error(`[tmdb] API respondeu HTTP ${response.status}.`);
+    if (response.status === 401) {
+      return send(res, 502, {
+        error: "invalid_tmdb_token",
+        message: "O token do TMDB é inválido ou não autorizado. Configure um Read Access Token válido em TMDB_API_READ_ACCESS_TOKEN.",
+      });
+    }
     return send(res, response.status === 429 ? 429 : 502, {
       error: response.status === 429 ? "rate_limit" : "tmdb_error",
       message: response.status === 429

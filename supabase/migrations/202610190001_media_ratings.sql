@@ -36,12 +36,12 @@ end
 $$;
 
 update public.media_ratings
-set watchlist_status = 'want_to_watch'
-where watchlist_status = 'up_next';
+set watchlist_status = null
+where watchlist_status in ('up_next', 'want_to_watch');
 
 alter table public.media_ratings
   add constraint media_ratings_watchlist_status_check
-  check (watchlist_status in ('watchlist', 'want_to_watch'));
+  check (watchlist_status = 'watchlist');
 
 alter table public.media_ratings
   drop constraint if exists media_ratings_score_check;

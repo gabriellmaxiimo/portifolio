@@ -14,6 +14,7 @@ import Resume from './pages/Resume';
 import Contact from './pages/Contact';
 import Cruzeiro from './pages/Cruzeiro';
 import Spotify from './pages/Spotify';
+import MediaLibrary from './pages/MediaLibrary';
 
 export default function App() {
   const [time, setTime] = useState('');
@@ -36,7 +37,7 @@ export default function App() {
 
   const t = {
     PT: {
-      tabs: ['Sobre Mim', 'Projetos', 'Experiências', 'Currículo', 'Contato', 'Cruzeiro', 'Spotify'],
+      tabs: ['Sobre Mim', 'Projetos', 'Experiências', 'Currículo', 'Contato', 'Cruzeiro', 'Spotify', 'Filmes e Séries', 'Animes'],
       settings: 'Definições',
       lang: 'Idioma',
       theme: 'Tema',
@@ -76,7 +77,7 @@ export default function App() {
       searchResultsTitle: 'Resultados da Pesquisa'
     },
     EN: {
-      tabs: ['About Me', 'Projects', 'Experiences', 'Resume', 'Contact', 'Cruzeiro', 'Spotify'],
+      tabs: ['About Me', 'Projects', 'Experiences', 'Resume', 'Contact', 'Cruzeiro', 'Spotify', 'Movies & TV', 'Anime'],
       settings: 'Settings',
       lang: 'Language',
       theme: 'Theme',
@@ -240,6 +241,8 @@ export default function App() {
           {activeTabIndex === 4 && <Contact currentT={currentT} themeClasses={themeClasses} />}
           {activeTabIndex === 5 && <Cruzeiro theme={theme} themeClasses={themeClasses} />}
           {activeTabIndex === 6 && <Spotify theme={theme} themeClasses={themeClasses} />}
+          {activeTabIndex === 7 && <MediaLibrary kind="tmdb" themeClasses={themeClasses} />}
+          {activeTabIndex === 8 && <MediaLibrary kind="anime" themeClasses={themeClasses} />}
         </div>
       </main>
 

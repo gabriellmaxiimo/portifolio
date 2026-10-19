@@ -13,6 +13,7 @@ import {
   LOGIN_PATH,
   SPOTIFY_PATH,
 } from "./SpotifyAPI/api/_spotify.js";
+import { handleTmdb, TMDB_PATH } from "./TMDBAPI/api/_tmdb.js";
 
 // Middleware do Gemini
 function geminiApi(env) {
@@ -53,11 +54,28 @@ function spotifyApi(env) {
   };
 }
 
+function tmdbApi(env) {
+  const middleware = (req, res, next) => {
+    if (new URL(req.url, "http://127.0.0.1:5173").pathname !== TMDB_PATH) return next();
+    handleTmdb(req, res, env).catch(next);
+  };
+
+  return {
+    name: "tmdb-api",
+    configureServer(server) {
+      server.middlewares.use(middleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware);
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    plugins: [react(), geminiApi(env), spotifyApi(env)],
+    plugins: [react(), geminiApi(env), spotifyApi(env), tmdbApi(env)],
     server: {
       host: "127.0.0.1",
       port: 5173,

@@ -254,7 +254,6 @@ export default function SpotifyDashboard({ initialRange = DEFAULT_RANGE }) {
                 </section>
               </div>
 
-              <p className="spt-source">Dados da Web API do Spotify · lidos no servidor com o seu refresh token</p>
             </>
           )}
       </>

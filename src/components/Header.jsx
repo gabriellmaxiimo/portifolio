@@ -13,6 +13,20 @@ import {
   X,
 } from 'lucide-react';
 import CruzeiroLogo from './CruzeiroLogo';
+import { usePortfolio } from '../context/PortfolioContext';
+
+function weatherPresentation(code) {
+  if (code === 0) return { Icon: Sun, label: 'Céu limpo' };
+  if (code === 1 || code === 2) return { Icon: CloudSun, label: 'Parcialmente nublado' };
+  if (code === 3) return { Icon: Cloud, label: 'Nublado' };
+  if ([45, 48].includes(code)) return { Icon: Cloud, label: 'Neblina' };
+  if ([51, 53, 55, 56, 57].includes(code)) return { Icon: CloudRain, label: 'Garoa' };
+  if ([61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86].includes(code)) {
+    return { Icon: CloudRain, label: 'Precipitação' };
+  }
+  if ([95, 96, 99].includes(code)) return { Icon: CloudLightning, label: 'Tempestade' };
+  return { Icon: Cloud, label: 'Condição do tempo' };
+}
 
 function weatherPresentation(code) {
   if (code === 0) return { Icon: Sun, label: 'Céu limpo' };
@@ -69,20 +83,22 @@ function SearchResultsPanel({ currentT, searchResults, themeClasses, onSelect })
   );
 }
 
-export default function Header({
-  theme,
-  themeClasses,
-  currentT,
-  time,
-  searchQuery,
-  setSearchQuery,
-  searchResults,
-  hasSearchResults,
-  setActiveTabIndex,
-  language,
-  setLanguage,
-  setTheme
-}) {
+export default function Header() {
+  const {
+    theme,
+    themeClasses,
+    currentT,
+    time,
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    hasSearchResults,
+    setActiveTabIndex,
+    language,
+    setLanguage,
+    setTheme,
+  } = usePortfolio();
+
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -161,7 +177,14 @@ export default function Header({
               className="min-w-0 bg-transparent border-none outline-none text-xs w-24 md:w-40 focus:w-52 transition-all placeholder:opacity-50"
             />
             {searchQuery && (
-              <X className="w-3.5 h-3.5 opacity-50 cursor-pointer hover:opacity-100" onClick={() => setSearchQuery('')} />
+              <button
+                type="button"
+                aria-label="Limpar busca"
+                className="flex h-5 w-5 items-center justify-center rounded-full opacity-50 hover:opacity-100"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             )}
           </div>
 

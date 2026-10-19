@@ -1,6 +1,9 @@
 import React from 'react';
+import { usePortfolio } from '../context/PortfolioContext';
 
-export default function Navigation({ currentT, activeTabIndex, setActiveTabIndex, themeClasses }) {
+export default function Navigation() {
+  const { currentT, activeTabIndex, setActiveTabIndex, themeClasses } = usePortfolio();
+
   return (
     <nav className="flex-none overflow-x-auto scrollbar-hide px-4 sm:px-6 lg:px-12 z-25 border-b border-current/10 pb-1 relative">
       <ul className="flex w-max min-w-full flex-nowrap gap-5 sm:gap-10 items-start">

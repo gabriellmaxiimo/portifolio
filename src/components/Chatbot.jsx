@@ -61,8 +61,10 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
 
-      while (true) {
+      let streamDone = false;
+      while (!streamDone) {
         const { done, value } = await reader.read();
+        streamDone = done;
         if (done) break;
 
         const chunkText = decoder.decode(value, { stream: true });
@@ -124,16 +126,18 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
                 {currentT.chatTitle || 'Chat com IA'}
               </span>
             </div>
-            <button 
-              onClick={() => setChatMessages([{ role: 'bot', text: 'Olá. Como posso ajudar?' }])} 
-              title={currentT.clearChat || 'Limpar conversa'} 
+            <button
+              type="button"
+              aria-label={currentT.clearChat || 'Limpar conversa'}
+              onClick={() => setChatMessages([{ role: 'bot', text: 'Olá. Como posso ajudar?' }])}
+              title={currentT.clearChat || 'Limpar conversa'}
               className="opacity-50 hover:opacity-100 transition-opacity"
             >
               <Trash2 size={14} />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" aria-live="polite">
             {chatMessages.map((msg, i) => {
               const isStreamingPlaceholder = isChatLoading && i === chatMessages.length - 1 && !msg.text;
 
@@ -161,13 +165,15 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
           </div>
 
           <form onSubmit={handleChatSubmit} className="p-3 border-t border-current/10 flex gap-2 bg-current/5">
-            <input 
-              type="text" 
-              value={chatInput} 
-              onChange={(e) => setChatInput(e.target.value)} 
-              placeholder={currentT.chatPlaceholder || 'Digite sua mensagem...'} 
-              className="flex-1 bg-transparent border-none outline-none text-xs px-2" 
-              disabled={isChatLoading} 
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder={currentT.chatPlaceholder || 'Digite sua mensagem...'}
+              aria-label={currentT.chatPlaceholder || 'Digite sua mensagem...'}
+              autoComplete="off"
+              className="flex-1 bg-transparent border-none outline-none text-xs px-2"
+              disabled={isChatLoading}
             />
             <button 
               type="submit" 

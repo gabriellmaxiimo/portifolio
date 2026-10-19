@@ -226,11 +226,11 @@ export default function MediaLibrary({ themeClasses, type, setType }) {
   const [busyId, setBusyId] = useState("");
 
   const isAnime = type === "anime";
-  const providers = isAnime
+  const providers = useMemo(() => isAnime
     ? ["anilist"]
     : type === "movie"
       ? ["tmdb_movie"]
-      : ["tmdb_tv"];
+      : ["tmdb_tv"], [isAnime, type]);
 
   useEffect(() => {
     if (!supabase) return undefined;
@@ -324,7 +324,7 @@ export default function MediaLibrary({ themeClasses, type, setType }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [isAdmin, isAnime, query, type, providers.join(",")]);
+  }, [isAdmin, isAnime, providers, query, type]);
 
   useEffect(() => {
     let active = true;
@@ -342,7 +342,7 @@ export default function MediaLibrary({ themeClasses, type, setType }) {
     return () => {
       active = false;
     };
-  }, [providers.join(",")]);
+  }, [providers]);
 
   const rankedRatings = useMemo(
     () => [...ratings]

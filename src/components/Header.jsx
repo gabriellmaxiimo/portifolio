@@ -28,19 +28,6 @@ function weatherPresentation(code) {
   return { Icon: Cloud, label: 'Condição do tempo' };
 }
 
-function weatherPresentation(code) {
-  if (code === 0) return { Icon: Sun, label: 'Céu limpo' };
-  if (code === 1 || code === 2) return { Icon: CloudSun, label: 'Parcialmente nublado' };
-  if (code === 3) return { Icon: Cloud, label: 'Nublado' };
-  if ([45, 48].includes(code)) return { Icon: Cloud, label: 'Neblina' };
-  if ([51, 53, 55, 56, 57].includes(code)) return { Icon: CloudRain, label: 'Garoa' };
-  if ([61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86].includes(code)) {
-    return { Icon: CloudRain, label: 'Precipitação' };
-  }
-  if ([95, 96, 99].includes(code)) return { Icon: CloudLightning, label: 'Tempestade' };
-  return { Icon: Cloud, label: 'Condição do tempo' };
-}
-
 function SearchResultsPanel({ currentT, searchResults, themeClasses, onSelect }) {
   return (
     <div className={`absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto rounded-2xl ${themeClasses.solidBg} border shadow-2xl z-50 p-3 flex flex-col gap-3 animate-fade-in custom-scrollbar`}>

@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, List, LogIn, LogOut, Search } from "lucide-react";
+import {
+  Bookmark,
+  BookmarkCheck,
+  LayoutGrid,
+  List,
+  LoaderCircle,
+  LogIn,
+  LogOut,
+  Save,
+  Search,
+  Trash2,
+} from "lucide-react";
 import {
   fetchAnilistCatalog,
   fetchMediaCatalogCache,
@@ -100,20 +111,19 @@ function MediaCard({ item, rank, viewMode, canEdit, onRate, onRemove, onWatchlis
 
   return (
     <article className={`media-card${viewMode === "list" ? " media-card--list" : ""}`}>
-      {rank !== undefined && (
-        <span className="media-rank-badge" aria-label={`Posição ${rank} no Top 20`}>{rank}</span>
-      )}
       {item.posterUrl ? (
         <img className="media-poster" src={item.posterUrl} alt="" loading="lazy" />
       ) : (
         <div className="media-poster media-poster-empty" aria-hidden="true">Sem imagem</div>
       )}
       <div className="media-card-content">
-        <div className="media-card-heading">
+        <div className={`media-card-heading${rank !== undefined ? " media-card-heading--ranked" : ""}`}>
+          {rank !== undefined && (
+            <span className="media-rank-badge" aria-label={`Posição ${rank} no Top 20`}>{rank}.</span>
+          )}
           <h3>{item.title}</h3>
           {item.year && <span>{item.year}</span>}
         </div>
-        <p className="media-overview">{item.overview || "Sinopse indisponível."}</p>
         <a className="media-external-link" href={item.externalUrl} target="_blank" rel="noopener noreferrer">
           Ver detalhes
         </a>
@@ -155,8 +165,12 @@ function MediaCard({ item, rank, viewMode, canEdit, onRate, onRemove, onWatchlis
                   className="media-save-rating"
                   disabled={busy || !hasUnsavedScore}
                   onClick={() => onRate(item, numericDraftScore)}
+                  aria-label={busy ? "Salvando nota" : "Salvar nota"}
+                  title={busy ? "Salvando nota" : "Salvar nota"}
                 >
-                  {busy ? "Salvando..." : "Salvar nota"}
+                  {busy
+                    ? <LoaderCircle size={16} className="media-action-spinner" aria-hidden="true" />
+                    : <Save size={16} aria-hidden="true" />}
                 </button>
                 {(item.rated || item.watchlistStatus) && (
                   <button
@@ -164,9 +178,10 @@ function MediaCard({ item, rank, viewMode, canEdit, onRate, onRemove, onWatchlis
                     className="media-clear-rating"
                     disabled={busy}
                     title="Remover a nota e o título das listas pessoais"
+                    aria-label="Remover a nota e o título das listas pessoais"
                     onClick={() => onRemove(item)}
                   >
-                    Remover
+                    <Trash2 size={16} aria-hidden="true" />
                   </button>
                 )}
                 <button
@@ -174,10 +189,13 @@ function MediaCard({ item, rank, viewMode, canEdit, onRate, onRemove, onWatchlis
                   className={`media-watchlist-button${item.watchlistStatus === "watchlist" ? " active" : ""}`}
                   disabled={busy}
                   aria-pressed={item.watchlistStatus === "watchlist"}
+                  aria-label={item.watchlistStatus === "watchlist" ? "Remover da minha lista" : "Adicionar à minha lista"}
+                  title={item.watchlistStatus === "watchlist" ? "Remover da minha lista" : "Adicionar à minha lista"}
                   onClick={() => onWatchlist(item, item.watchlistStatus === "watchlist" ? null : "watchlist")}
                 >
-                  {item.watchlistStatus === "watchlist" && <span aria-hidden="true">✓ </span>}
-                  Minha lista
+                  {item.watchlistStatus === "watchlist"
+                    ? <BookmarkCheck size={16} aria-hidden="true" />
+                    : <Bookmark size={16} aria-hidden="true" />}
                 </button>
               </div>
             </>

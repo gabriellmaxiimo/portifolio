@@ -16,13 +16,40 @@ import Cruzeiro from './pages/Cruzeiro';
 import Spotify from './pages/Spotify';
 import MediaLibrary from './pages/MediaLibrary';
 
+const TAB_PATHS = [
+  '/sobre-mim',
+  '/projetos',
+  '/experiencias',
+  '/curriculo',
+  '/contato',
+  '/cruzeiro',
+  '/spotify',
+  '/filmes-series-animes',
+];
+
+function getTabIndexFromPath(pathname) {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  const tabIndex = TAB_PATHS.indexOf(normalizedPath);
+  return tabIndex === -1 ? 0 : tabIndex;
+}
+
 export default function App() {
   const [time, setTime] = useState('');
   const [language, setLanguage] = useState('PT');
   const [theme, setTheme] = useState('Cyberpunk');
-  const [activeTabIndex, setActiveTabIndex] = useState(0); 
+  const [activeTabIndex, setActiveTabIndex] = useState(() => getTabIndexFromPath(window.location.pathname));
   const [searchQuery, setSearchQuery] = useState('');
   const [mediaType, setMediaType] = useState('movie');
+
+  const navigateToTab = (tabIndex) => {
+    const nextTabIndex = Number.isInteger(tabIndex) && TAB_PATHS[tabIndex] ? tabIndex : 0;
+    const nextPath = TAB_PATHS[nextTabIndex];
+    setActiveTabIndex(nextTabIndex);
+
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState(null, '', `${nextPath}${window.location.search}${window.location.hash}`);
+    }
+  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -34,6 +61,12 @@ export default function App() {
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => setActiveTabIndex(getTabIndexFromPath(window.location.pathname));
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const t = {
@@ -212,7 +245,7 @@ export default function App() {
         setSearchQuery={setSearchQuery}
         searchResults={searchResults}
         hasSearchResults={hasSearchResults}
-        setActiveTabIndex={setActiveTabIndex}
+        setActiveTabIndex={navigateToTab}
         language={language}
         setLanguage={setLanguage}
         setTheme={setTheme}
@@ -221,7 +254,7 @@ export default function App() {
       <Navigation
         currentT={currentT}
         activeTabIndex={activeTabIndex}
-        setActiveTabIndex={setActiveTabIndex}
+        setActiveTabIndex={navigateToTab}
         themeClasses={themeClasses}
       />
 
@@ -232,11 +265,11 @@ export default function App() {
               currentT={currentT}
               themeClasses={themeClasses}
               stack={stack}
-              onOpenCruzeiro={() => setActiveTabIndex(5)}
-              onOpenSpotify={() => setActiveTabIndex(6)}
+              onOpenCruzeiro={() => navigateToTab(5)}
+              onOpenSpotify={() => navigateToTab(6)}
               onOpenMedia={(type) => {
                 setMediaType(type);
-                setActiveTabIndex(7);
+                navigateToTab(7);
               }}
             />
           )}
@@ -250,7 +283,7 @@ export default function App() {
         </div>
       </main>
 
-      <Chatbot currentT={currentT} themeClasses={themeClasses} onContact={() => setActiveTabIndex(4)} />
+      <Chatbot currentT={currentT} themeClasses={themeClasses} onContact={() => navigateToTab(4)} />
     </div>
   );
 }

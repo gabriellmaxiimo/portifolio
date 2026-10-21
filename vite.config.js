@@ -14,6 +14,7 @@ import {
   SPOTIFY_PATH,
 } from "./SpotifyAPI/api/_spotify.js";
 import { handleTmdb, TMDB_PATH } from "./TMDBAPI/api/_tmdb.js";
+import { GITHUB_PATH, handleGitHub } from "./GitHubAPI/api/_github.js";
 
 // Middleware do Gemini
 function geminiApi(env) {
@@ -71,11 +72,28 @@ function tmdbApi(env) {
   };
 }
 
+function githubApi(env) {
+  const middleware = (req, res, next) => {
+    if (new URL(req.url, "http://127.0.0.1:5173").pathname !== GITHUB_PATH) return next();
+    handleGitHub(req, res, env).catch(next);
+  };
+
+  return {
+    name: "github-api",
+    configureServer(server) {
+      server.middlewares.use(middleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(middleware);
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    plugins: [react(), geminiApi(env), spotifyApi(env), tmdbApi(env)],
+    plugins: [react(), geminiApi(env), spotifyApi(env), tmdbApi(env), githubApi(env)],
     server: {
       host: "127.0.0.1",
       port: 5173,

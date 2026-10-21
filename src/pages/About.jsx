@@ -9,6 +9,7 @@ import { useEspn } from '../../ESPN_API/src/components/ESPN/useEspn';
 import { fetchNowPlaying } from '../../SpotifyAPI/src/services/spotifyService';
 import { artistNames, formatAgo } from '../../SpotifyAPI/src/components/format';
 import { fetchMediaRatings, formatMediaStorageError } from '../services/mediaService';
+import GitHubProfile from '../components/GitHubProfile';
 
 const CRUZEIRO_ESPN_ID = '2022';
 
@@ -131,6 +132,8 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
           })}
         </div>
       </div>
+
+      <GitHubProfile title={currentT.githubProfileTitle} />
 
       <section className="mb-10" aria-labelledby="top-media-heading">
         <h2 id="top-media-heading" className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50 mb-3">

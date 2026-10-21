@@ -1,16 +1,21 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Code2, GraduationCap, WalletCards } from "lucide-react";
+import { BriefcaseBusiness, Bus, ChevronLeft, ChevronRight, ClipboardCheck, Code2, ExternalLink } from "lucide-react";
 
 const projectVisuals = [
   {
-    Icon: WalletCards,
+    Icon: BriefcaseBusiness,
     style: "from-cyan-500/30 via-blue-500/15 to-indigo-950/70",
-    label: "PAYMENTS · API",
+    label: "EMPLOYMENT · PLATFORM",
   },
   {
-    Icon: GraduationCap,
+    Icon: ClipboardCheck,
     style: "from-emerald-500/30 via-teal-500/15 to-slate-950/70",
-    label: "ACADEMIC · DATA",
+    label: "EVENT STAFF · MANAGEMENT",
+  },
+  {
+    Icon: Bus,
+    style: "from-amber-500/30 via-orange-500/15 to-slate-950/70",
+    label: "TRANSPORT · MOBILITY",
   },
 ];
 
@@ -70,7 +75,18 @@ export default function Projects({ currentT, themeClasses }) {
             )}
           </div>
           <div className="p-4 md:p-5">
-            <h3 className="mb-1.5 text-lg font-medium">{project.name}</h3>
+            <h3 className="mb-1.5 text-lg font-medium">
+              <a
+                href={project.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 transition-opacity hover:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
+              >
+                {project.name}
+                <ExternalLink size={15} aria-hidden="true" />
+                <span className="sr-only"> (abre em nova aba)</span>
+              </a>
+            </h3>
             <p className="mb-3 text-sm leading-relaxed opacity-75">{project.desc}</p>
             <span className={`text-[10px] uppercase tracking-[0.16em] font-bold ${themeClasses.accent}`}>{project.tech}</span>
           </div>

@@ -188,7 +188,8 @@ const HANDLERS = { profile: getProfile, repos: getRepos, contributions: getContr
    Handler: GET /api/github?resource=profile&username=joaopauloaramuni
    ===================================================================== */
 
-export async function handleGitHub(req, res, env = {}) {
+// onlyUser: no portfólio a rota só atende o dono, para ninguém gastar a cota do GITHUB_TOKEN com outros usuários.
+export async function handleGitHub(req, res, env = {}, { onlyUser } = {}) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return send(res, 405, { error: "method_not_allowed", message: "Use GET." });
@@ -203,6 +204,9 @@ export async function handleGitHub(req, res, env = {}) {
   }
   if (!USERNAME_RE.test(username)) {
     return send(res, 400, { error: "bad_request", message: "Usuário do GitHub inválido." });
+  }
+  if (onlyUser && username.toLowerCase() !== onlyUser.toLowerCase()) {
+    return send(res, 403, { error: "forbidden", message: "Esta rota só mostra o perfil do dono do site." });
   }
 
   const token = String(env.GITHUB_TOKEN ?? "").trim();

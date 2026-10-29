@@ -12,6 +12,21 @@ export const supabase = supabaseUrl && supabaseAnonKey
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+function requireSupabase(feature) {
+  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar ${feature}.`);
+  return supabase;
+}
+
+const toRatingRow = (media) => ({
+  provider: media.provider,
+  catalog_id: String(media.id),
+  title: media.title,
+  poster_url: media.posterUrl,
+  release_year: media.year,
+  overview: media.overview,
+  updated_at: new Date().toISOString(),
+});
+
 export function formatMediaStorageError(error) {
   const message = error?.message ?? "Erro desconhecido ao acessar o Supabase.";
   if (
@@ -72,8 +87,7 @@ export async function fetchAnilistCatalog({ query = "", page = 1, signal }) {
 }
 
 export async function fetchMediaRatings(providers) {
-  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar as avaliações.`);
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabase("as avaliações")
     .from("media_ratings")
     .select("provider, catalog_id, title, poster_url, release_year, overview, score, watchlist_status, updated_at")
     .in("provider", providers)
@@ -84,26 +98,16 @@ export async function fetchMediaRatings(providers) {
 }
 
 export async function saveMediaRating(media, score) {
-  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar as avaliações.`);
+  const db = requireSupabase("as avaliações");
   if (score !== null && (!Number.isInteger(score) || score < 0 || score > 100)) {
     throw new Error("A nota deve ser um número inteiro entre 0 e 100.");
   }
-  const identity = { provider: media.provider, catalog_id: String(media.id) };
-  const { error } = await supabase.from("media_ratings").upsert({
-    ...identity,
-    title: media.title,
-    poster_url: media.posterUrl,
-    release_year: media.year,
-    overview: media.overview,
-    score,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "provider,catalog_id" });
+  const { error } = await db.from("media_ratings").upsert({ ...toRatingRow(media), score }, { onConflict: "provider,catalog_id" });
   if (error) throw error;
 }
 
 export async function removeMediaRating(media) {
-  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar as avaliações.`);
-  const { error } = await supabase
+  const { error } = await requireSupabase("as avaliações")
     .from("media_ratings")
     .delete()
     .match({ provider: media.provider, catalog_id: String(media.id) });
@@ -111,33 +115,27 @@ export async function removeMediaRating(media) {
 }
 
 export async function setMediaWatchlist(media, watchlistStatus) {
-  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar a lista pessoal.`);
+  const db = requireSupabase("a lista pessoal");
   if (watchlistStatus !== null && watchlistStatus !== "watchlist") {
     throw new Error("Estado da lista inválido.");
   }
   const identity = { provider: media.provider, catalog_id: String(media.id) };
   if (watchlistStatus === null && !media.rated) {
-    const { error } = await supabase.from("media_ratings").delete().match(identity);
+    const { error } = await db.from("media_ratings").delete().match(identity);
     if (error) throw error;
     return;
   }
 
-  const { error } = await supabase.from("media_ratings").upsert({
-    ...identity,
-    title: media.title,
-    poster_url: media.posterUrl,
-    release_year: media.year,
-    overview: media.overview,
+  const { error } = await db.from("media_ratings").upsert({
+    ...toRatingRow(media),
     score: media.rated ? media.score : null,
     watchlist_status: watchlistStatus,
-    updated_at: new Date().toISOString(),
   }, { onConflict: "provider,catalog_id" });
   if (error) throw error;
 }
 
 export async function fetchMediaCatalogCache(providers, query = "") {
-  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar o cache.`);
-  let request = supabase
+  let request = requireSupabase("o cache")
     .from("media_catalog_cache")
     .select("provider, catalog_id, title, poster_url, release_year, overview, popularity")
     .in("provider", providers)
@@ -165,8 +163,7 @@ export async function cacheMediaCatalog(items) {
 }
 
 export async function signInWithGitHub() {
-  if (!supabase) throw new Error(`Configure ${supabaseMissingSettings.join(" e ")} para ativar o login.`);
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { error } = await requireSupabase("o login").auth.signInWithOAuth({
     provider: "github",
     options: { redirectTo: window.location.origin },
   });

@@ -78,7 +78,7 @@ export default function GitHubProfileCard({ username }) {
 // Caixa de erro compartilhada pelos componentes do GitHub
 export function GitHubMessage({ error }) {
   const hint = {
-    rate_limited: "Crie o GITHUB_TOKEN no .env.local (veja o README) e reinicie o npm run dev.",
+    rate_limited: "Crie o GITHUB_TOKEN no .env.local e reinicie o npm run dev.",
     invalid_token: "Gere um novo token em github.com/settings/personal-access-tokens.",
     no_api: "As funções da pasta api/ só rodam no npm run dev ou na Vercel.",
   }[error?.code];

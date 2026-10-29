@@ -18,9 +18,6 @@ const GITHUB_CONFIG = {
 
   // Quantas linguagens aparecem no gráfico
   MAX_LANGUAGES: 8,
-
-  // Mostra a caixa de busca para ver outro usuário
-  ALLOW_SEARCH: true,
 };
 
 export default GITHUB_CONFIG;

@@ -17,6 +17,80 @@
 .theme-cruzeiro { background-image: linear-gradient(-45deg, #00173d, #003380, #00173d, #0040a0); }
 .theme-cyberpunk { background-image: linear-gradient(-45deg, #050505, #1a001a, #001a1a, #050505); }
 
+/* Tokens de cor de cada tema. O layout usa as classes Tailwind de App.jsx (themeClasses);
+   estes alimentam os widgets (ESPN, Spotify, GitHub, Currículo), as listas <select> e a Biblioteca.
+   --surface e --surface-border repetem o solidBg do tema em App.jsx. */
+.theme-original {
+  --foreground: #f8fafc; --muted: #cbd5e1;
+  --border: rgb(255 255 255 / 14%); --surface-muted: rgb(255 255 255 / 8%);
+  --card-surface: rgb(255 255 255 / 5%); --control-surface: #101827;
+  --skeleton-start: #1e293b; --skeleton-mid: #334155;
+  --surface: #1e1b4b; --surface-border: rgb(168 85 247 / 30%);
+}
+.theme-escuro {
+  --foreground: #f3f4f6; --muted: #d1d5db;
+  --border: rgb(156 163 175 / 30%); --surface-muted: rgb(0 0 0 / 50%);
+  --card-surface: rgb(0 0 0 / 50%); --control-surface: #151515;
+  --skeleton-start: #27272a; --skeleton-mid: #3f3f46;
+  --surface: #151515; --surface-border: rgb(55 65 81 / 50%);
+}
+.theme-claro {
+  --foreground: #111827; --muted: #4b5563;
+  --border: rgb(107 114 128 / 25%); --surface-muted: rgb(15 23 42 / 6%);
+  --card-surface: rgb(255 255 255 / 65%); --control-surface: #ffffff;
+  --skeleton-start: #e2e8f0; --skeleton-mid: #f8fafc;
+  --surface: #ffffff; --surface-border: #d1d5db;
+  --error-text: #b91c1c; --success-text: #15803d;
+}
+.theme-cruzeiro {
+  --foreground: #ffffff; --muted: #dbeafe;
+  --border: rgb(255 255 255 / 22%); --surface-muted: rgb(255 255 255 / 10%);
+  --card-surface: rgb(255 255 255 / 10%); --control-surface: #003b78;
+  --skeleton-start: #003b78; --skeleton-mid: #075bb5;
+  --surface: #002255; --surface-border: rgb(96 165 250 / 30%);
+}
+.theme-cyberpunk {
+  --foreground: #ffffff; --muted: #d4d4e8;
+  --border: rgb(255 0 255 / 35%); --surface-muted: rgb(255 0 255 / 8%);
+  --card-surface: rgb(5 5 5 / 80%); --control-surface: #0a000a;
+  --skeleton-start: #1a001a; --skeleton-mid: #17252a;
+  --surface: #0a000a; --surface-border: rgb(255 0 255 / 50%);
+}
+
+/* Erro/sucesso nos temas escuros (o Claro define os seus acima). Usados pelos widgets e por text-[var(--error-text)]. */
+.theme-original, .theme-escuro, .theme-cruzeiro, .theme-cyberpunk {
+  --error-text: #fca5a5; --error-background: rgb(127 29 29 / 30%); --error-border: rgb(248 113 113 / 40%);
+  --success-text: #4ade80;
+}
+
+option { background-color: var(--surface); color: var(--foreground); }
+
+/* base-select (Chrome/Edge 135+) deixa estilizar a lista aberta; outros navegadores ficam com a lista nativa nas cores acima. */
+@supports (appearance: base-select) {
+  .theme-select, .theme-select::picker(select) { appearance: base-select; }
+  .theme-select::picker(select) {
+    margin-top: 0.35rem;
+    padding: 0.3rem;
+    border: 1px solid var(--surface-border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    color: var(--foreground);
+    box-shadow: 0 20px 40px rgb(0 0 0 / 35%);
+  }
+  .theme-select option {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    background: transparent;
+    color: inherit;
+  }
+  .theme-select option:hover, .theme-select option:focus-visible { background: color-mix(in srgb, currentColor 12%, transparent); }
+  .theme-select option:checked { font-weight: 700; }
+  .theme-select option::checkmark { display: none; }
+  .theme-select::picker-icon { opacity: 0.6; transition: rotate 0.2s; }
+  .theme-select:open::picker-icon { rotate: 180deg; }
+}
+
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 

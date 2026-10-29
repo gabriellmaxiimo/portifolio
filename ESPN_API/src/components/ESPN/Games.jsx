@@ -1,7 +1,7 @@
 import { FiClock, FiExternalLink, FiMapPin, FiTv } from "react-icons/fi";
 import { formatDay, formatDayMonth, formatLongDate, formatTime, formatUntil, timeParts } from "./format";
 import { LeagueLogo, ResultBadge, TeamLogo } from "./Shared";
-import { legName, liveStatus, leagueName, nbaSeasonType, noteText, phaseName } from "./translate";
+import { legName, liveStatus, leagueName, noteText, phaseName } from "./translate";
 import { useNow } from "./useEspn";
 
 /* =====================================================================
@@ -10,9 +10,6 @@ import { useNow } from "./useEspn";
 
 // "Brasileirão Série A · Semifinal · Jogo de ida"
 function competitionText(game) {
-  if (game.sport === "nba") {
-    return [nbaSeasonType(game.seasonType), noteText(game.note)].filter(Boolean).join(" · ");
-  }
   return [leagueName(game.league.name), phaseName(game.phase), legName(game.leg)]
     .filter(Boolean)
     .join(" · ");

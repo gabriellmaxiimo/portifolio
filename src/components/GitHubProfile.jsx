@@ -7,7 +7,7 @@ export default function GitHubProfile({ title }) {
       <h2 id="github-profile-heading" className="mb-3 text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">
         {title}
       </h2>
-      <GitHubDashboard username={GITHUB_CONFIG.USERNAME} showSearch={false} />
+      <GitHubDashboard username={GITHUB_CONFIG.USERNAME} />
     </section>
   );
 }

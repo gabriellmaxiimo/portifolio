@@ -5,7 +5,7 @@ import Navigation from './components/Navigation';
 import Chatbot from './components/Chatbot';
 import CruzeiroLogo from './components/CruzeiroLogo';
 import { PortfolioProvider } from './context/PortfolioContext';
-import { getSearchResults, portfolioContent, stack } from './content/portfolioContent';
+import { FINANCE_TAB_INDEX, getSearchResults, portfolioContent, stack } from './content/portfolioContent';
 
 const About = lazy(() => import('./pages/About'));
 const Projects = lazy(() => import('./pages/Projects'));
@@ -15,6 +15,7 @@ const Contact = lazy(() => import('./pages/Contact'));
 const Cruzeiro = lazy(() => import('./pages/Cruzeiro'));
 const Spotify = lazy(() => import('./pages/Spotify'));
 const MediaLibrary = lazy(() => import('./pages/MediaLibrary'));
+const Finance = lazy(() => import('./pages/Finance'));
 
 const TAB_PATHS = [
   '/sobre-mim',
@@ -25,7 +26,18 @@ const TAB_PATHS = [
   '/cruzeiro',
   '/spotify',
   '/filmes-series-animes',
+  '/controle-financeiro',
 ];
+const GOOGLE_SESSION_KEY = 'googleSession';
+
+function readGoogleSession() {
+  try {
+    const session = JSON.parse(sessionStorage.getItem(GOOGLE_SESSION_KEY));
+    return session?.expiresAt > Date.now() ? session : null;
+  } catch {
+    return null;
+  }
+}
 
 function LoadingPanel() {
   return (
@@ -48,6 +60,17 @@ export default function App() {
   const [activeTabIndex, setActiveTabIndex] = useState(() => getTabIndexFromPath(window.location.pathname));
   const [searchQuery, setSearchQuery] = useState('');
   const [mediaType, setMediaType] = useState('movie');
+  const [googleSession, setGoogleSessionState] = useState(readGoogleSession);
+
+  const setGoogleSession = (session) => {
+    setGoogleSessionState(session);
+    try {
+      if (session) sessionStorage.setItem(GOOGLE_SESSION_KEY, JSON.stringify(session));
+      else sessionStorage.removeItem(GOOGLE_SESSION_KEY);
+    } catch {
+      // sem storage a sessão só dura até recarregar a página
+    }
+  };
 
   const navigateToTab = (tabIndex) => {
     const nextTabIndex = Number.isInteger(tabIndex) && TAB_PATHS[tabIndex] ? tabIndex : 0;
@@ -156,7 +179,9 @@ export default function App() {
     hasSearchResults,
     themeClasses,
     time,
-  }), [activeTabIndex, currentT, hasSearchResults, language, mediaType, searchQuery, searchResults, theme, themeClasses, time]);
+    googleSession,
+    setGoogleSession,
+  }), [googleSession, activeTabIndex, currentT, hasSearchResults, language, mediaType, searchQuery, searchResults, theme, themeClasses, time]);
 
   return (
     <PortfolioProvider value={portfolioValue}>
@@ -170,7 +195,8 @@ export default function App() {
         <Header />
         <Navigation />
 
-        <main className="flex-1 overflow-y-auto px-6 lg:px-12 py-8 flex flex-col z-10 scrollbar-hide relative">
+        {/* pb maior até xl: espaço para rolar o conteúdo acima dos botões flutuantes (contato e chat) */}
+        <main className="flex-1 overflow-y-auto px-6 lg:px-12 pt-8 pb-40 xl:pb-8 flex flex-col z-10 scrollbar-hide relative">
           <div className="w-full max-w-5xl mx-auto my-auto py-4">
             <Suspense fallback={<LoadingPanel />}>
               {activeTabIndex === 0 && (
@@ -190,9 +216,14 @@ export default function App() {
               {activeTabIndex === 2 && <Experiences currentT={currentT} themeClasses={themeClasses} />}
               {activeTabIndex === 3 && <Resume currentT={currentT} themeClasses={themeClasses} />}
               {activeTabIndex === 4 && <Contact currentT={currentT} themeClasses={themeClasses} />}
-              {activeTabIndex === 5 && <Cruzeiro theme={theme} themeClasses={themeClasses} />}
-              {activeTabIndex === 6 && <Spotify theme={theme} themeClasses={themeClasses} />}
+              {activeTabIndex === 5 && <Cruzeiro currentT={currentT} themeClasses={themeClasses} />}
+              {activeTabIndex === 6 && <Spotify currentT={currentT} themeClasses={themeClasses} />}
               {activeTabIndex === 7 && <MediaLibrary themeClasses={themeClasses} type={mediaType} setType={setMediaType} />}
+              {activeTabIndex === FINANCE_TAB_INDEX && (googleSession ? (
+                <Finance themeClasses={themeClasses} session={googleSession} onSessionExpired={() => setGoogleSession(null)} />
+              ) : (
+                <p className="text-center text-sm opacity-70">Entre com Google pelo ícone de perfil para acessar o Controle Financeiro.</p>
+              ))}
             </Suspense>
           </div>
         </main>

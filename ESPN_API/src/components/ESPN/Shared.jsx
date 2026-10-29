@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FiAlertTriangle, FiRefreshCw } from "react-icons/fi";
 import { resultLabel, resultTitle } from "./translate";
 
-/* Pedaços usados pelo futebol e pelo basquete */
+/* Pedaços compartilhados pelos componentes do futebol */
 
 // Escudo do time; se a imagem não carregar, mostra a sigla
 export function TeamLogo({ team, size = 32 }) {

@@ -58,54 +58,27 @@ export function noteText(note) {
         .replace(/1st round/i, "1ª rodada dos playoffs")
         .replace(/conf(erence)? semifinals?/i, "semifinal de conferência")
         .replace(/conf(erence)? finals?/i, "final de conferência")
-        .replace(/^nba finals$/i, "Finais da NBA")
         .replace(/game (\d+)/i, "jogo $1")
     )
     .join(" · ");
 }
 
-const DIVISIONS = {
-  Atlantic: "do Atlântico",
-  Central: "Central",
-  Southeast: "do Sudeste",
-  Northwest: "do Noroeste",
-  Pacific: "do Pacífico",
-  Southwest: "do Sudoeste",
-};
-
 // "7th in Brazilian Serie A" → "7º no Brasileirão Série A"
-// "1st in Pacific Division"  → "1º na Divisão do Pacífico"
 export function standingText(summary) {
   const match = /^(\d+)\w*\s+in\s+(.+)$/i.exec(summary ?? "");
   if (!match) return summary ?? null;
   const [, position, group] = match;
-  const division = /^(\w+) Division$/i.exec(group)?.[1];
-  if (division) return `${position}º na Divisão ${DIVISIONS[division] ?? division}`;
-  const conference = /^(Eastern|Western) Conference$/i.exec(group)?.[1];
-  if (conference) return `${position}º na Conferência ${/east/i.test(conference) ? "Leste" : "Oeste"}`;
   return `${position}º no ${leagueName(group)}`;
 }
-
-// Tipo da temporada na NBA
-export const nbaSeasonType = (type) =>
-  ({ 1: "Pré-temporada", 2: "Temporada regular", 3: "Playoffs", 5: "Play-in" })[type] ?? null;
-
-export const conferenceName = (name) =>
-  /east/i.test(name) ? "Conferência Leste" : /west/i.test(name) ? "Conferência Oeste" : name;
 
 // Situação de um jogo ao vivo ou que não vai acontecer
 export function liveStatus(game) {
   const name = game.statusName;
   if (/HALFTIME/.test(name)) return "Intervalo";
-  if (/END_PERIOD/.test(name)) return `Fim do ${game.period}º quarto`;
   if (/POSTPONED/.test(name)) return "Adiado";
   if (/CANCELED|CANCELLED/.test(name)) return "Cancelado";
   if (/SUSPENDED|DELAYED/.test(name)) return "Interrompido";
   if (game.state !== "in") return null;
-  if (game.sport === "nba") {
-    const period = game.period > 4 ? `prorrogação ${game.period - 4}` : `${game.period}º quarto`;
-    return `${game.clock} · ${period}`;
-  }
   return game.clock || "Em andamento";
 }
 

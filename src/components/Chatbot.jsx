@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { MessageCircle, Phone, Send, Trash2, X } from 'lucide-react';
+import { useClickOutside } from './useClickOutside';
 
-export default function Chatbot({ currentT = {}, themeClasses = {}, onContact }) {
+export default function Chatbot({ currentT, themeClasses, onContact }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [chatMessages, setChatMessages] = useState([{ role: 'bot', text: 'Olá. Como posso ajudar?' }]);
+  // A saudação não fica aqui: é desenhada na hora, no idioma atual.
+  const [chatMessages, setChatMessages] = useState([]);
   const chatEndRef = useRef(null);
+  const chatRef = useRef(null);
+  const closeChat = useCallback(() => setIsChatOpen(false), []);
+  useClickOutside(chatRef, closeChat, isChatOpen);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -20,9 +25,9 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
 
     const userMsg = chatInput.trim();
 
+    // Mensagens de erro não são respostas do Gemini: não vão no histórico.
     const historyPayload = chatMessages
-      .slice(1)
-      .filter(msg => msg.text)
+      .filter(msg => msg.text && !msg.error)
       .slice(-6)
       .map(msg => ({
         role: msg.role === 'bot' ? 'model' : 'user',
@@ -86,9 +91,8 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
         const lastIdx = updated.length - 1;
         updated[lastIdx] = {
           role: 'bot',
-          text: error instanceof TypeError
-            ? 'Ocorreu um erro temporário ao processar a solicitação com o assistente.'
-            : error.message
+          error: true,
+          text: error instanceof TypeError ? currentT.chatError : error.message
         };
         return updated;
       });
@@ -102,35 +106,36 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
       <button
         type="button"
         onClick={onContact}
-        aria-label="Ir para a guia de contatos"
-        title="Contato"
-        className={`fixed bottom-24 right-6 z-50 grid h-11 w-11 place-items-center rounded-full shadow-xl transition-all hover:scale-110 ${themeClasses.solidBg || ''}`}
+        aria-label={currentT.contactShortcut}
+        title={currentT.contactTitle}
+        className={`fixed bottom-24 right-6 z-50 grid h-11 w-11 place-items-center rounded-full shadow-xl transition-all hover:scale-110 border ${themeClasses.solidBg}`}
       >
         <Phone size={18} aria-hidden="true" />
       </button>
+      <div ref={chatRef}>
       <button 
         type="button"
         onClick={() => setIsChatOpen(!isChatOpen)} 
-        className={`fixed bottom-6 right-6 p-4 rounded-full shadow-2xl z-50 transition-all transform hover:scale-110 ${themeClasses.solidBg || ''}`}
-        aria-label={isChatOpen ? 'Fechar chatbot' : 'Abrir chatbot'}
+        className={`fixed bottom-6 right-6 p-4 rounded-full shadow-2xl z-50 transition-all transform hover:scale-110 border ${themeClasses.solidBg}`}
+        aria-label={isChatOpen ? currentT.chatClose : currentT.chatOpen}
       >
         {isChatOpen ? <X size={24} /> : <MessageCircle size={24} />}
       </button>
 
       {isChatOpen && (
-        <div className={`fixed bottom-6 right-24 w-[min(380px,calc(100vw-7rem))] h-[min(450px,calc(100dvh-3rem))] rounded-2xl flex flex-col z-50 shadow-2xl overflow-hidden ${themeClasses.solidBg || ''} border animate-fade-in`}>
+        <div className={`fixed bottom-6 right-24 w-[min(380px,calc(100vw-7rem))] h-[min(450px,calc(100dvh-3rem))] rounded-2xl flex flex-col z-50 shadow-2xl overflow-hidden ${themeClasses.solidBg} border animate-fade-in`}>
           <div className="flex justify-between items-center p-4 border-b border-current/10 bg-current/5">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-xs font-bold tracking-wider uppercase">
-                {currentT.chatTitle || 'Chat com IA'}
+                {currentT.chatTitle}
               </span>
             </div>
             <button
               type="button"
-              aria-label={currentT.clearChat || 'Limpar conversa'}
-              onClick={() => setChatMessages([{ role: 'bot', text: 'Olá. Como posso ajudar?' }])}
-              title={currentT.clearChat || 'Limpar conversa'}
+              aria-label={currentT.clearChat}
+              onClick={() => setChatMessages([])}
+              title={currentT.clearChat}
               className="opacity-50 hover:opacity-100 transition-opacity"
             >
               <Trash2 size={14} />
@@ -138,15 +143,15 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar" aria-live="polite">
-            {chatMessages.map((msg, i) => {
-              const isStreamingPlaceholder = isChatLoading && i === chatMessages.length - 1 && !msg.text;
+            {[{ role: 'bot', text: currentT.chatGreeting }, ...chatMessages].map((msg, i, all) => {
+              const isStreamingPlaceholder = isChatLoading && i === all.length - 1 && !msg.text;
 
               return (
                 <div key={i} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-3 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
                     msg.role === 'user' 
                       ? 'bg-current/10 rounded-tr-sm' 
-                      : `${themeClasses.glass || ''} border-none rounded-tl-sm`
+                      : `${themeClasses.glass} border-none rounded-tl-sm`
                   }`}>
                     {isStreamingPlaceholder ? (
                       <div className="flex gap-1 items-center py-1">
@@ -169,15 +174,16 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              placeholder={currentT.chatPlaceholder || 'Digite sua mensagem...'}
-              aria-label={currentT.chatPlaceholder || 'Digite sua mensagem...'}
+              placeholder={currentT.chatPlaceholder}
+              aria-label={currentT.chatPlaceholder}
               autoComplete="off"
               className="flex-1 bg-transparent border-none outline-none text-xs px-2"
               disabled={isChatLoading}
             />
             <button 
               type="submit" 
-              disabled={!chatInput.trim() || isChatLoading} 
+              disabled={!chatInput.trim() || isChatLoading}
+              aria-label={currentT.contactSend}
               className="p-2 rounded-lg bg-current/10 hover:bg-current/20 disabled:opacity-30 transition-all"
             >
               <Send size={14} />
@@ -185,6 +191,7 @@ export default function Chatbot({ currentT = {}, themeClasses = {}, onContact })
           </form>
         </div>
       )}
+      </div>
     </>
   );
 }

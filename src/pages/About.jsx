@@ -78,7 +78,7 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
   const topPicks = ['tmdb_movie', 'tmdb_tv', 'anilist'].map((provider) => ({
     provider,
     type: provider === 'tmdb_movie' ? 'movie' : provider === 'tmdb_tv' ? 'tv' : 'anime',
-    label: provider === 'tmdb_movie' ? 'Top 1 Filme' : provider === 'tmdb_tv' ? 'Top 1 Série' : 'Top 1 Anime',
+    label: currentT.topLabels[provider],
     item: topMedia
       .filter((rating) => rating.provider === provider)
       .sort((a, b) => b.score - a.score || new Date(b.updated_at) - new Date(a.updated_at))[0],
@@ -137,7 +137,7 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
 
       <section className="mb-10" aria-labelledby="top-media-heading">
         <h2 id="top-media-heading" className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50 mb-3">
-          Meus favoritos
+          {currentT.favoritesTitle}
         </h2>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-3">
           {topPicks.map(({ provider, type, label, item }) => (
@@ -147,7 +147,7 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
               disabled={!item}
               onClick={() => item && onOpenMedia(type)}
               className={`min-w-0 rounded-2xl p-3 text-left flex items-center gap-3 ${themeClasses.glass} ${item ? themeClasses.hover : 'opacity-70 cursor-default'}`}
-              aria-label={item ? `${label}: ${item.title}, nota ${item.score}. Abrir catálogo.` : `${label}: ainda sem avaliação`}
+              aria-label={item ? `${label}: ${item.title}, ${currentT.scoreText(item.score)}. ${currentT.openCatalog}.` : `${label}: ${currentT.notRatedYet}`}
             >
               {item?.poster_url ? (
                 <img src={item.poster_url} alt="" loading="lazy" className="w-14 h-20 shrink-0 rounded-lg object-cover" />
@@ -156,8 +156,8 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
               )}
               <span className="min-w-0">
                 <span className="block text-[10px] uppercase tracking-wider opacity-60">{label}</span>
-                <span className="block mt-1 text-sm font-semibold truncate">{item?.title ?? 'Ainda sem avaliação'}</span>
-                {item && <span className="block mt-1 text-xs opacity-70">Nota {item.score}/100</span>}
+                <span className="block mt-1 text-sm font-semibold truncate">{item?.title ?? currentT.notRatedYet}</span>
+                {item && <span className="block mt-1 text-xs opacity-70">{currentT.scoreText(item.score)}</span>}
               </span>
             </button>
           ))}
@@ -214,7 +214,7 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
             <FiMusic className="shrink-0 opacity-60" size={18} aria-hidden="true" />
           </button>
           {musicRequest.status === 'error' && (
-            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-red-300" role="alert">
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-[var(--error-text)]" role="alert">
               <span>{currentT.trackUnavailable}</span>
               <button
                 type="button"
@@ -236,7 +236,7 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
             type="button"
             onClick={onOpenCruzeiro}
             className={`w-full h-28 overflow-hidden text-left p-2.5 rounded-2xl flex flex-col gap-1 ${themeClasses.glass} ${themeClasses.hover} transition-all`}
-            aria-label="Ver informações do Cruzeiro"
+            aria-label={currentT.matchOpen}
           >
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 border border-current/20 px-2 py-1 rounded">
@@ -245,12 +245,12 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
             <div className="flex items-center gap-1.5 text-[10px] opacity-70">
               <Calendar size={12} />
               {matchRequest.status === 'loading' && !matchRequest.data
-                ? 'Carregando jogo...'
+                ? currentT.matchLoading
                 : nextMatch
                   ? matchDate.format(nextMatch.date)
                   : matchRequest.status === 'error'
-                    ? 'Dados indisponíveis'
-                    : 'Sem jogo marcado'}
+                    ? currentT.matchUnavailable
+                    : currentT.noMatch}
             </div>
           </div>
           
@@ -267,27 +267,27 @@ export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, o
           <div className="flex justify-between items-center pt-1 border-t border-current/10">
             <div className="flex min-w-0 items-center gap-1.5 text-[10px] opacity-70">
               <MapPin size={12} />
-              <span className="truncate">{nextMatch ? [nextMatch.venue, nextMatch.city].filter(Boolean).join(', ') || 'Local a definir' : 'Acompanhe os jogos'}</span>
+              <span className="truncate">{nextMatch ? [nextMatch.venue, nextMatch.city].filter(Boolean).join(', ') || currentT.venueTbd : currentT.followMatches}</span>
             </div>
             <div className="flex shrink-0 items-center gap-1.5 text-[10px] font-bold">
               <Clock size={12} />
               {nextMatch?.state === 'in'
-                ? 'Ao vivo'
+                ? currentT.live
                 : nextMatch?.timeValid
                   ? matchTime.format(nextMatch.date)
-                  : 'Horário a definir'}
+                  : currentT.timeTbd}
             </div>
           </div>
           </button>
           {matchRequest.status === 'error' && (
-            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-red-300" role="alert">
+            <div className="mt-2 flex items-center justify-between gap-3 text-xs text-[var(--error-text)]" role="alert">
               <span>{matchRequest.error.message}</span>
               <button
                 type="button"
                 onClick={matchRequest.reload}
                 className="inline-flex shrink-0 items-center gap-1 hover:underline"
               >
-                <RefreshCw size={12} /> Tentar novamente
+                <RefreshCw size={12} /> {currentT.retry}
               </button>
             </div>
           )}

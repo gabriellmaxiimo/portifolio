@@ -30,9 +30,6 @@ export default function useGitHub(fetcher, username) {
 // Formatação compartilhada pelos componentes (pt-BR)
 export const formatNumber = (value = 0) => new Intl.NumberFormat("pt-BR").format(value);
 
-export const formatCompact = (value = 0) =>
-  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(value);
-
 export function formatDate(value, options = { day: "numeric", month: "short", year: "numeric" }) {
   if (!value) return "";
   const date = new Date(value.length === 10 ? `${value}T12:00:00` : value);

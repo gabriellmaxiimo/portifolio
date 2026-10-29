@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Cloud,
   CloudLightning,
@@ -11,9 +11,16 @@ import {
   Gamepad2,
   ChevronRight,
   X,
+  LogIn,
+  LogOut,
+  Wallet,
 } from 'lucide-react';
+import { FaGithub } from 'react-icons/fa';
 import CruzeiroLogo from './CruzeiroLogo';
 import { usePortfolio } from '../context/PortfolioContext';
+import { signInWithGoogle, signOutGoogle } from '../services/googleService';
+import { FINANCE_TAB_INDEX } from '../content/portfolioContent';
+import { useClickOutside } from './useClickOutside';
 
 function weatherPresentation(code) {
   if (code === 0) return { Icon: Sun, label: 'Céu limpo' };
@@ -84,6 +91,8 @@ export default function Header() {
     language,
     setLanguage,
     setTheme,
+    googleSession,
+    setGoogleSession,
   } = usePortfolio();
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -92,6 +101,62 @@ export default function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [weather, setWeather] = useState(null);
   const [weatherError, setWeatherError] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [githubUser, setGithubUser] = useState(null);
+  const menusRef = useRef(null);
+  const closeMenus = useCallback(() => {
+    setIsProfileOpen(false);
+    setIsSettingsOpen(false);
+  }, []);
+  useClickOutside(menusRef, closeMenus, isProfileOpen || isSettingsOpen);
+
+  // Mesmo login GitHub (Supabase) da Biblioteca; import dinâmico para não pesar o carregamento inicial.
+  useEffect(() => {
+    let unsubscribe = () => {};
+    let active = true;
+    import('../services/mediaService').then(({ supabase }) => {
+      if (!supabase || !active) return;
+      supabase.auth.getSession().then(({ data }) => active && setGithubUser(data.session?.user ?? null));
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => setGithubUser(session?.user ?? null));
+      unsubscribe = () => data.subscription.unsubscribe();
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const handleGitHub = async () => {
+    setAuthError('');
+    const { signInWithGitHub, signOutFromSupabase, formatMediaStorageError } = await import('../services/mediaService');
+    try {
+      await (githubUser ? signOutFromSupabase() : signInWithGitHub());
+    } catch (error) {
+      setAuthError(formatMediaStorageError(error));
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsSigningIn(true);
+    setAuthError('');
+    try {
+      setGoogleSession(await signInWithGoogle());
+      setActiveTabIndex(FINANCE_TAB_INDEX);
+      setIsProfileOpen(false);
+    } catch (error) {
+      setAuthError(error.message);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleGoogleSignOut = () => {
+    signOutGoogle(googleSession);
+    setGoogleSession(null);
+    setActiveTabIndex(0);
+    setIsProfileOpen(false);
+  };
 
   useEffect(() => {
     let active = true;
@@ -180,7 +245,7 @@ export default function Header() {
           )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-0.5 sm:gap-2 text-sm relative">
+      <div ref={menusRef} className="flex shrink-0 items-center gap-0.5 sm:gap-2 text-sm relative">
         <div className="relative sm:hidden">
           <button
             type="button"
@@ -304,7 +369,42 @@ export default function Header() {
                   <span>{currentT.resumeBtn}</span>
                   <ChevronRight size={14} className="opacity-50" />
                 </button>
+                {googleSession && (
+                  <button onClick={() => { setActiveTabIndex(FINANCE_TAB_INDEX); setIsProfileOpen(false); }} className="flex items-center justify-between px-3 py-2 text-xs rounded hover:bg-current/5 transition-colors">
+                    <span className="inline-flex items-center gap-2"><Wallet size={14} /> {currentT.financeBtn}</span>
+                    <ChevronRight size={14} className="opacity-50" />
+                  </button>
+                )}
               </div>
+              <div className="w-full border-t border-current/10 my-1"></div>
+              <div className="w-full flex flex-col gap-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">{currentT.accounts}</p>
+                {googleSession ? (
+                  <>
+                    <p className="text-[11px] opacity-70 truncate px-3" title={googleSession.email}>Google: {googleSession.email}</p>
+                    <button onClick={handleGoogleSignOut} className="flex items-center gap-2 px-3 py-2 text-xs rounded hover:bg-current/5 transition-colors">
+                      <LogOut size={14} /> {currentT.googleSignOut}
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={handleGoogleSignIn} disabled={isSigningIn} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-current/20 hover:bg-current/10 disabled:opacity-50 transition-colors">
+                    <LogIn size={14} /> {isSigningIn ? '...' : currentT.googleSignIn}
+                  </button>
+                )}
+                {githubUser ? (
+                  <>
+                    <p className="text-[11px] opacity-70 truncate px-3">GitHub: @{githubUser.user_metadata?.user_name ?? githubUser.email}</p>
+                    <button onClick={handleGitHub} className="flex items-center gap-2 px-3 py-2 text-xs rounded hover:bg-current/5 transition-colors">
+                      <LogOut size={14} /> {currentT.githubSignOut}
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={handleGitHub} className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs rounded border border-current/20 hover:bg-current/10 transition-colors">
+                    <FaGithub size={14} /> {currentT.githubSignIn}
+                  </button>
+                )}
+              </div>
+              {authError && <p className="w-full text-[11px] text-[var(--error-text)]">{authError}</p>}
             </div>
           )}
         </div>

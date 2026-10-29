@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 /**
  * Carrega dados da ESPN e guarda o estado da tela.
  *
- *   const { status, data, error, reload } = useEspn(() => fetchNbaTeam("lal"), ["lal"]);
+ *   const { status, data, error, reload } = useEspn(() => fetchSoccerTeam("2022"), ["2022"]);
  *
  * status: "loading" | "ready" | "error". Enquanto troca de time, os dados
  * antigos continuam na tela (data) até os novos chegarem.

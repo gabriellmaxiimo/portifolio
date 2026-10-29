@@ -35,60 +35,6 @@
   color: var(--gh-text);
 }
 
-/* =========================================================
-   BUSCA
-   ========================================================= */
-
-.gh-search {
-  position: relative;
-
-  display: flex;
-  gap: 0.5rem;
-
-  width: min(460px, 100%);
-  margin: 0 auto;
-}
-
-.gh-search-icon {
-  position: absolute;
-  top: 50%;
-  left: 1rem;
-
-  color: var(--gh-muted);
-
-  transform: translateY(-50%);
-}
-
-.gh-search input {
-  flex: 1;
-
-  height: 46px;
-
-  padding: 0 1rem 0 2.6rem;
-
-  color: var(--gh-text);
-
-  background: #ffffff;
-
-  border: 1px solid var(--gh-border);
-  border-radius: 8px;
-
-  outline: none;
-
-  font-size: 0.95rem;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.gh-search input:focus {
-  border-color: var(--gh-brand);
-
-  box-shadow: 0 0 0 3px rgba(0, 83, 128, 0.12);
-}
-
-.gh-search button,
 .gh-button {
   display: inline-flex;
   justify-content: center;
@@ -122,7 +68,6 @@
     box-shadow 0.2s ease;
 }
 
-.gh-search button:hover,
 .gh-button:hover {
   background: var(--gh-brand-deep);
 
@@ -844,19 +789,12 @@
   }
 }
 
-@media (max-width: 420px) {
-  .gh-search button {
-    padding: 0 1rem;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .gh-skeleton {
     animation: none;
   }
 
   .gh-repo,
-  .gh-search button,
   .gh-button {
     transition: none;
   }

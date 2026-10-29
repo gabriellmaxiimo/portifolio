@@ -1,5 +1,5 @@
 /* =========================================================
-   ESPN (futebol e basquete)
+   ESPN (futebol)
    As cores vêm das variáveis do index.css; se você copiar o
    componente para outro projeto, os valores depois da vírgula
    (fallback) garantem o mesmo visual.
@@ -40,97 +40,6 @@
   opacity: 0.55;
 
   pointer-events: none;
-}
-
-/* Ícone da faixa azul (bola de futebol + bola de basquete) */
-.espn-hero-icons {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-
-  width: auto !important;
-}
-
-.espn-hero-icons svg {
-  width: 56px;
-  height: 56px;
-}
-
-.espn-hero-icons svg:last-child {
-  color: #f59e0b;
-}
-
-/* =========================================================
-   ABAS (futebol | basquete) e CONFERÊNCIAS
-   ========================================================= */
-
-.espn-tabs {
-  display: inline-flex;
-  align-self: center;
-  gap: 4px;
-
-  padding: 4px;
-
-  background: var(--espn-surface);
-
-  border-radius: 12px;
-}
-
-.espn-tabs button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  height: 42px;
-
-  padding: 0 1.4rem;
-
-  color: var(--espn-muted);
-
-  background: transparent;
-
-  border: none;
-  border-radius: 9px;
-
-  font-size: 0.95rem;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.espn-tabs button svg {
-  font-size: 1.15rem;
-}
-
-.espn-tabs button:hover {
-  color: var(--espn-brand);
-}
-
-.espn-tabs button.active {
-  color: #ffffff;
-
-  background: var(--espn-brand);
-
-  box-shadow: 0 2px 4px rgba(0, 51, 79, 0.15);
-}
-
-.espn-tabs-small {
-  align-self: flex-start;
-
-  margin-bottom: 1rem;
-}
-
-.espn-tabs-small button {
-  height: 34px;
-
-  padding: 0 0.9rem;
-
-  font-size: 0.82rem;
 }
 
 /* =========================================================
@@ -299,11 +208,12 @@
 }
 
 .espn-result-W {
-  background: var(--espn-win);
+  /* Fundo fixo (letra branca): as variáveis de texto clareiam nos temas escuros. */
+  background: #2e7d32;
 }
 
 .espn-result-L {
-  background: var(--espn-loss);
+  background: #b91c1c;
 }
 
 /* =========================================================
@@ -1076,15 +986,13 @@
   font-weight: 600;
 }
 
-.zone-libertadores .espn-rank,
-.zone-playoffs .espn-rank {
+.zone-libertadores .espn-rank {
   color: #ffffff;
 
   background: #1d4ed8;
 }
 
-.zone-pre-libertadores .espn-rank,
-.zone-playin .espn-rank {
+.zone-pre-libertadores .espn-rank {
   color: #ffffff;
 
   background: #0ea5e9;
@@ -1177,13 +1085,11 @@
   border-radius: 3px;
 }
 
-.espn-legend .zone-libertadores span,
-.espn-legend .zone-playoffs span {
+.espn-legend .zone-libertadores span {
   background: #1d4ed8;
 }
 
-.espn-legend .zone-pre-libertadores span,
-.espn-legend .zone-playin span {
+.espn-legend .zone-pre-libertadores span {
   background: #0ea5e9;
 }
 
@@ -1300,21 +1206,6 @@
 }
 
 @media (max-width: 600px) {
-  .espn-tabs {
-    align-self: stretch;
-  }
-
-  .espn-tabs button {
-    flex: 1 1 0;
-    justify-content: center;
-
-    padding: 0 0.75rem;
-  }
-
-  .espn-tabs-small {
-    align-self: stretch;
-  }
-
   .espn-select {
     flex: 1 1 100%;
   }

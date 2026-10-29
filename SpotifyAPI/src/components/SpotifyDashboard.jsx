@@ -46,7 +46,7 @@ function useStats(range) {
 
 function ErrorBox({ error }) {
   const hint = {
-    missing_config: "Siga o passo a passo do README: crie o app no Spotify, preencha o .env.local e gere o refresh token em /api/spotify/login.",
+    missing_config: "Crie o app em developer.spotify.com, preencha SPOTIFY_CLIENT_ID e SPOTIFY_CLIENT_SECRET no .env.local e gere o refresh token em /api/spotify/login.",
     malformed_config: "No .env.local, use SPOTIFY_REFRESH_TOKEN= seguido apenas pelo token. Não repita SPOTIFY_REFRESH_TOKEN= dentro do valor.",
     invalid_refresh_token: "Abra http://127.0.0.1:5173/api/spotify/login no npm run dev e gere um token novo.",
     invalid_client: "Confira as chaves em developer.spotify.com/dashboard → seu app → Settings.",

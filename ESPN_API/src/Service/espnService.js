@@ -4,17 +4,13 @@ import ESPN_CONFIG from "../Config/espnConfig";
 //
 // A ESPN manda MUITA coisa (links, odds, estatísticas...). Aqui cada resposta
 // vira um objeto pequeno, só com o que a tela usa, e com o mesmo formato no
-// futebol e no basquete: os componentes não precisam saber de onde veio.
+// futebol: os componentes não precisam saber de onde veio.
 //
 //   fetchSoccerTeams()          → times da liga (para o <select>)
 //   fetchSoccerTeam(id)         → { team, next, results } de um time
 //   fetchSoccerStandings()      → { season, rows } (classificação)
-//   fetchNbaTeams()             → times da NBA
-//   fetchNbaLeague()            → { season, phase, games } (próximos jogos da liga)
-//   fetchNbaTeam(sigla)         → { team, next, results } de um time
-//   fetchNbaStandings()         → { season, conferences } (Leste e Oeste)
 
-const { SOCCER, BASKETBALL, CACHE_MS } = ESPN_CONFIG;
+const { SOCCER, CACHE_MS } = ESPN_CONFIG;
 
 const ESPN_CDN = "https://a.espncdn.com/i";
 
@@ -57,7 +53,7 @@ async function getJson(url) {
 }
 
 /* =====================================================================
-   Normalização (futebol e basquete usam o mesmo formato de jogo)
+   Normalização
    ===================================================================== */
 
 // O placar vem como texto ("2"), número ou objeto ({ value: 2, displayValue: "2" })
@@ -74,9 +70,6 @@ function teamLogo(team = {}, sport) {
   const find = (rel) =>
     logos.find((logo) => logo.rel?.includes(rel) && !logo.rel?.includes("scoreboard"))?.href;
   if (find("default")) return find("default");
-  if (sport === "nba" && team.abbreviation) {
-    return `${ESPN_CDN}/teamlogos/nba/500/${team.abbreviation.toLowerCase()}.png`;
-  }
   if (sport === "soccer" && team.id) return `${ESPN_CDN}/teamlogos/soccer/500/${team.id}.png`;
   return team.logo ?? null;
 }
@@ -90,7 +83,7 @@ export function normalizeTeam(team, sport) {
     abbr: team.abbreviation ?? "",
     logo: teamLogo(team, sport),
     color: team.color ? `#${team.color}` : null,
-    // "12-8-9" (futebol: V-E-D) ou "2-1" (NBA: V-D)
+    // "12-8-9" (V-E-D)
     record: team.recordSummary ?? null,
     // "7th in Brazilian Serie A" / "1st in Pacific Division" (traduzido na tela)
     standing: team.standingSummary ?? null,
@@ -158,16 +151,11 @@ export function normalizeEvent(event, sport) {
     statusDetail: status.type?.shortDetail ?? "",
     clock: status.displayClock ?? "",
     period: status.period ?? 0,
-    league:
-      sport === "nba"
-        ? { name: "NBA", slug: "nba", logo: BASKETBALL.LEAGUE_LOGO }
-        : {
-            name: league.name ?? "",
-            slug: league.slug ?? "",
-            logo: leagueLogoId ? `${ESPN_CDN}/leaguelogos/soccer/500/${leagueLogoId}.png` : null,
-          },
-    // Tipo da temporada na NBA: 1 pré-temporada, 2 regular, 3 playoffs, 5 play-in
-    seasonType: Number(event.season?.type ?? event.seasonType?.type) || null,
+    league: {
+      name: league.name ?? "",
+      slug: league.slug ?? "",
+      logo: leagueLogoId ? `${ESPN_CDN}/leaguelogos/soccer/500/${leagueLogoId}.png` : null,
+    },
     phase: phaseName(event.seasonType),
     leg: competition.leg?.value ?? null, // 1 = ida, 2 = volta (mata-mata)
     note: competition.notes?.find((n) => n.type === "event" || n.headline)?.headline ?? null,
@@ -269,128 +257,5 @@ export function fetchSoccerStandings() {
       .map((row, i) => ({ ...row, rank: row.rank ?? i + 1 }));
 
     return { season: group.seasonDisplayName ?? body.name ?? "", rows };
-  });
-}
-
-/* =====================================================================
-   BASQUETE (NBA)
-   ===================================================================== */
-
-export function fetchNbaTeams() {
-  return cached("nba:teams", async () => {
-    const body = await getJson(`${BASKETBALL.SITE_API}/teams`);
-    const teams = body.sports?.[0]?.leagues?.[0]?.teams ?? [];
-    return teams
-      .map(({ team }) => normalizeTeam(team, "nba"))
-      .sort((a, b) => a.name.localeCompare(b.name, "en"));
-  });
-}
-
-// { year: 2027 } → "2026-27" (a ESPN chama a temporada pelo ano em que acaba)
-function seasonName(season) {
-  if (!season) return "";
-  if (/\d{4}-\d{2}/.test(season.displayName ?? "")) return season.displayName;
-  const year = Number(season.year);
-  return year ? `${year - 1}-${String(year).slice(2)}` : "";
-}
-
-// O calendário vem como lista de datas ("2026-10-09T07:00Z") ou de objetos
-function calendarDays(league) {
-  return (league?.calendar ?? [])
-    .map((day) => (typeof day === "string" ? day : (day?.startDate ?? day?.value)))
-    .filter(Boolean)
-    .map((day) => day.slice(0, 10));
-}
-
-export function fetchNbaLeague() {
-  return cached("nba:league", async () => {
-    const scoreboard = `${BASKETBALL.SITE_API}/scoreboard`;
-    const today = await getJson(scoreboard);
-    const todayDate = today.day?.date ?? new Date().toISOString().slice(0, 10);
-    const nextDays = calendarDays(today.leagues?.[0])
-      .filter((day) => day > todayDate)
-      .slice(0, BASKETBALL.DAYS_MAX);
-
-    const games = new Map();
-    const add = (events = []) =>
-      events.forEach((event) => {
-        const game = normalizeEvent(event, "nba");
-        if (game.state !== "post") games.set(game.id, game);
-      });
-    add(today.events);
-
-    // De 3 em 3 dias, até ter NEXT_GAMES jogos (na pré-temporada há dias com 1 jogo só)
-    for (let i = 0; i < nextDays.length && games.size < BASKETBALL.NEXT_GAMES; i += 3) {
-      const days = nextDays.slice(i, i + 3);
-      const responses = await Promise.allSettled(
-        days.map((day) => getJson(`${scoreboard}?dates=${day.replaceAll("-", "")}`))
-      );
-      responses.forEach((r) => r.status === "fulfilled" && add(r.value.events));
-    }
-
-    return {
-      season: seasonName(today.season ?? today.leagues?.[0]?.season),
-      seasonType: Number(today.season?.type) || null,
-      games: sortGames([...games.values()]),
-    };
-  });
-}
-
-// Sem parâmetro a ESPN manda só a fase atual (na pré-temporada, só os amistosos):
-// por isso vai junto a temporada regular (?seasontype=2)
-export function fetchNbaTeam(abbr) {
-  return cached(`nba:team:${abbr}`, async () => {
-    const base = `${BASKETBALL.SITE_API}/teams/${abbr}/schedule`;
-    const [current, regular] = await Promise.allSettled([
-      getJson(base),
-      getJson(`${base}?seasontype=2`),
-    ]);
-    if (current.status === "rejected" && regular.status === "rejected") throw current.reason;
-
-    const bodies = [current, regular].filter((r) => r.status === "fulfilled").map((r) => r.value);
-    const team = normalizeTeam(bodies[0].team, "nba");
-    const games = new Map();
-    for (const body of bodies) {
-      for (const event of body.events ?? []) {
-        const game = normalizeEvent(event, "nba");
-        games.set(game.id, fromTeamSide(game, team.id));
-      }
-    }
-    const all = [...games.values()];
-
-    return {
-      team,
-      season: seasonName(bodies[0].requestedSeason ?? bodies[0].season),
-      next: sortGames(all.filter((g) => g.state !== "post")),
-      results: all.filter((g) => g.state === "post").sort((a, b) => b.date - a.date),
-    };
-  });
-}
-
-export function fetchNbaStandings() {
-  return cached("nba:standings", async () => {
-    const body = await getJson(BASKETBALL.STANDINGS_API);
-    const conferences = (body.children ?? []).map((conference) => {
-      const group = conference.standings ?? {};
-      const rows = (group.entries ?? [])
-        .map((entry) => ({
-          seed: Number(stat(entry, "playoffSeed")?.value) || null,
-          team: normalizeTeam(entry.team, "nba"),
-          wins: stat(entry, "wins")?.value ?? 0,
-          losses: stat(entry, "losses")?.value ?? 0,
-          pct: stat(entry, "winPercent")?.displayValue ?? "",
-          gamesBehind: stat(entry, "gamesBehind")?.displayValue ?? "-",
-          streak: stat(entry, "streak")?.displayValue ?? "",
-          lastTen: stat(entry, "Last Ten Games")?.displayValue ?? null,
-        }))
-        .sort((a, b) => (a.seed ?? 99) - (b.seed ?? 99));
-      return {
-        key: (conference.abbreviation ?? conference.name ?? "").toLowerCase(),
-        name: conference.name ?? "",
-        season: group.seasonDisplayName ?? "",
-        rows,
-      };
-    });
-    return { season: conferences[0]?.season ?? "", conferences };
   });
 }

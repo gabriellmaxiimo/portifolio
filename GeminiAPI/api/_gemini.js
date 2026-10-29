@@ -79,7 +79,7 @@ const ipOf = (req) =>
   "desconhecido";
 
 // Registra o pedido e devolve quantos segundos esperar (0 = pode seguir)
-function waitSeconds(ip, now = Date.now()) {
+export function waitSeconds(ip, now = Date.now()) {
   const biggest = Math.max(...LIMITS.map((l) => l.windowMs));
   const recent = (requests.get(ip) ?? []).filter((t) => now - t < biggest);
 

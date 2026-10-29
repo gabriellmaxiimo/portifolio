@@ -1,5 +1,5 @@
 // espnConfig.js
-// Configurações do painel <EspnDashboard /> (futebol e basquete).
+// Configurações dos componentes da ESPN (futebol).
 //
 // Tudo vem da API pública da ESPN (site.api.espn.com): não pede chave, não
 // tem cadastro e libera CORS, então o navegador chama a ESPN direto.
@@ -19,9 +19,6 @@ const ESPN_CONFIG = {
 
   // Quanto tempo (ms) cada resposta fica guardada no navegador
   CACHE_MS: 60 * 1000,
-
-  // Aba aberta ao carregar a página: "futebol" ou "basquete"
-  DEFAULT_SPORT: "futebol",
 
   /* ===================================================================
      FUTEBOL
@@ -54,28 +51,6 @@ const ESPN_CONFIG = {
       { from: 7, to: 12, key: "sudamericana", label: "Sul-Americana" },
       { from: 17, to: 20, key: "rebaixamento", label: "Rebaixamento" },
     ],
-  },
-
-  /* ===================================================================
-     BASQUETE (NBA)
-     =================================================================== */
-  BASKETBALL: {
-    SITE_API: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba",
-    STANDINGS_API: "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings",
-    LEAGUE_LOGO: "https://a.espncdn.com/i/teamlogos/leagues/500/nba.png",
-    SCHEDULE_PAGE: "https://www.espn.com.br/nba/calendario",
-    TEAM_PAGE: "https://www.espn.com.br/nba/time/calendario/_/sigla/",
-
-    // Time aberto ao carregar a aba: "" = a liga toda, ou a sigla ("lal", "gs"...)
-    DEFAULT_TEAM: (env.VITE_NBA_TEAM || "").toLowerCase(),
-
-    // Quantos jogos aparecem antes do "Ver todos"
-    NEXT_GAMES: 6,
-
-    // A ESPN não aceita intervalo de datas no placar da liga: o painel busca
-    // dia a dia, nos dias que têm jogo (o calendário vem na própria resposta),
-    // até juntar NEXT_GAMES jogos ou olhar DAYS_MAX dias.
-    DAYS_MAX: 6,
   },
 };
 

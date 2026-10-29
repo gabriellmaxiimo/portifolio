@@ -41,13 +41,13 @@ export default function Contact({ currentT, themeClasses }) {
   return (
     <div className="animate-fade-in w-full max-w-md mx-auto">
       <h2 className={`text-3xl font-light mb-8 tracking-tight text-center ${themeClasses.accent}`}>
-        {currentT.contactTitle || "Contato"}
+        {currentT.contactTitle}
       </h2>
 
       <form onSubmit={handleSubmit} className={`p-8 rounded-2xl flex flex-col gap-6 ${themeClasses.glass}`}>
         <input 
           type="email" 
-          placeholder="O seu email" 
+          placeholder={currentT.contactEmail} 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -56,7 +56,7 @@ export default function Contact({ currentT, themeClasses }) {
         
         <textarea 
           rows={4} 
-          placeholder="Escreva a sua mensagem..." 
+          placeholder={currentT.contactMessage} 
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required
@@ -68,22 +68,22 @@ export default function Contact({ currentT, themeClasses }) {
           disabled={status.loading}
           className={`mt-2 px-6 py-3 rounded-lg text-xs font-bold tracking-[0.2em] uppercase transition-all shadow-lg border border-current/20 hover:bg-current/10 flex items-center justify-center gap-2`}
         >
-          {status.loading ? 'A enviar...' : (
+          {status.loading ? currentT.contactSending : (
             <>
-              <Send size={14} /> ENVIAR
+              <Send size={14} /> {currentT.contactSend}
             </>
           )}
         </button>
 
         {status.success && (
-          <div className="flex items-center gap-2 text-xs text-green-500 justify-center">
-            <CheckCircle size={14} /> Mensagem enviada com sucesso!
+          <div className="flex items-center gap-2 text-xs text-[var(--success-text)] justify-center">
+            <CheckCircle size={14} /> {currentT.contactSuccess}
           </div>
         )}
 
         {status.error && (
-          <div className="flex items-center gap-2 text-xs text-red-500 justify-center">
-            <AlertCircle size={14} /> Erro ao enviar. Tente novamente.
+          <div className="flex items-center gap-2 text-xs text-[var(--error-text)] justify-center">
+            <AlertCircle size={14} /> {currentT.contactError}
           </div>
         )}
       </form>

@@ -70,9 +70,9 @@ export default function Chatbot({ currentT, themeClasses, onContact }) {
       while (!streamDone) {
         const { done, value } = await reader.read();
         streamDone = done;
-        if (done) break;
-
-        const chunkText = decoder.decode(value, { stream: true });
+        // No fim, decode() sem valor solta um acento que tenha ficado partido entre dois pedaços.
+        const chunkText = done ? decoder.decode() : decoder.decode(value, { stream: true });
+        if (!chunkText) continue;
 
         setChatMessages(prev => {
           const updated = [...prev];

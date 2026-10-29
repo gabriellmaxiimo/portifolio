@@ -10,6 +10,7 @@ import { fetchNowPlaying } from '../../SpotifyAPI/src/services/spotifyService';
 import { artistNames, formatAgo } from '../../SpotifyAPI/src/components/format';
 import { fetchMediaRatings, formatMediaStorageError } from '../services/mediaService';
 import GitHubProfile from '../components/GitHubProfile';
+import { usePortfolio } from '../context/PortfolioContext';
 
 const CRUZEIRO_ESPN_ID = '2022';
 
@@ -26,12 +27,11 @@ const techIcons = {
   Git: SiGit,
 };
 
-const matchDate = new Intl.DateTimeFormat('pt-BR', {
-  timeZone: ESPN_CONFIG.TIMEZONE,
-  weekday: 'short',
-  day: '2-digit',
-  month: '2-digit',
-});
+// Dia da semana no idioma da página ("sáb., 01/11" / "Sat, 11/01").
+const matchDateFormats = {
+  PT: new Intl.DateTimeFormat('pt-BR', { timeZone: ESPN_CONFIG.TIMEZONE, weekday: 'short', day: '2-digit', month: '2-digit' }),
+  EN: new Intl.DateTimeFormat('en-US', { timeZone: ESPN_CONFIG.TIMEZONE, weekday: 'short', day: '2-digit', month: '2-digit' }),
+};
 
 const matchTime = new Intl.DateTimeFormat('pt-BR', {
   timeZone: ESPN_CONFIG.TIMEZONE,
@@ -41,6 +41,7 @@ const matchTime = new Intl.DateTimeFormat('pt-BR', {
 });
 
 export default function About({ currentT, themeClasses, stack, onOpenCruzeiro, onOpenSpotify, onOpenMedia }) {
+  const matchDate = matchDateFormats[usePortfolio().language];
   const matchRequest = useEspn(() => fetchSoccerTeam(CRUZEIRO_ESPN_ID), [CRUZEIRO_ESPN_ID]);
   const nextMatch = matchRequest.data?.next?.[0];
   const [musicRequest, setMusicRequest] = useState({ status: 'loading', data: null, error: null });

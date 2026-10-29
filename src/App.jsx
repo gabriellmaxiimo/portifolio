@@ -1,8 +1,9 @@
-import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 
 import Header from './components/Header';
 import Navigation from './components/Navigation';
 import Chatbot from './components/Chatbot';
+import ErrorBoundary from './components/ErrorBoundary';
 import CruzeiroLogo from './components/CruzeiroLogo';
 import { PortfolioProvider } from './context/PortfolioContext';
 import { FINANCE_TAB_INDEX, getSearchResults, portfolioContent, stack } from './content/portfolioContent';
@@ -29,6 +30,25 @@ const TAB_PATHS = [
   '/controle-financeiro',
 ];
 const GOOGLE_SESSION_KEY = 'googleSession';
+const THEMES = ['Cyberpunk', 'Escuro', 'Claro', 'Cruzeiro', 'Original'];
+
+// Tema e idioma escolhidos continuam depois de recarregar; valor desconhecido (ou sem storage) cai no padrão.
+function readPreference(key, allowed, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return allowed.includes(value) ? value : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function savePreference(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // sem storage a escolha só dura até recarregar a página
+  }
+}
 
 function readGoogleSession() {
   try {
@@ -55,9 +75,16 @@ function getTabIndexFromPath(pathname) {
 
 export default function App() {
   const [time, setTime] = useState('');
-  const [language, setLanguage] = useState('PT');
-  const [theme, setTheme] = useState('Cyberpunk');
+  const [language, setLanguage] = useState(() => readPreference('language', ['PT', 'EN'], 'PT'));
+  const [theme, setTheme] = useState(() => readPreference('theme', THEMES, 'Cyberpunk'));
   const [activeTabIndex, setActiveTabIndex] = useState(() => getTabIndexFromPath(window.location.pathname));
+  const mainRef = useRef(null);
+
+  useEffect(() => { savePreference('language', language); }, [language]);
+  useEffect(() => { savePreference('theme', theme); }, [theme]);
+  // Trocar de aba começa a página nova do topo (o <main> é quem rola, não a janela).
+  // Corpo em bloco: no Chrome novo scrollTo() devolve uma Promise, que o React trataria como limpeza do efeito.
+  useEffect(() => { mainRef.current?.scrollTo(0, 0); }, [activeTabIndex]);
   const [searchQuery, setSearchQuery] = useState('');
   const [mediaType, setMediaType] = useState('movie');
   const [googleSession, setGoogleSessionState] = useState(readGoogleSession);
@@ -185,7 +212,8 @@ export default function App() {
 
   return (
     <PortfolioProvider value={portfolioValue}>
-      <div className={`h-screen w-full overflow-hidden flex flex-col font-sans relative ${themeClasses.bgClass} animated-bg`}>
+      {/* h-dvh: no celular, 100vh inclui a barra do navegador e escondia o fim da página e os botões flutuantes. */}
+      <div className={`h-dvh w-full overflow-hidden flex flex-col font-sans relative ${themeClasses.bgClass} animated-bg`}>
         {theme === 'Cruzeiro' && (
           <div className="absolute -bottom-20 -right-20 opacity-10 blur-[2px] pointer-events-none z-0">
             <CruzeiroLogo className="w-[600px] h-[600px]" />
@@ -196,8 +224,10 @@ export default function App() {
         <Navigation />
 
         {/* pb maior até xl: espaço para rolar o conteúdo acima dos botões flutuantes (contato e chat) */}
-        <main className="flex-1 overflow-y-auto px-6 lg:px-12 pt-8 pb-40 xl:pb-8 flex flex-col z-10 scrollbar-hide relative">
+        <main ref={mainRef} className="flex-1 overflow-y-auto px-6 lg:px-12 pt-8 pb-40 xl:pb-8 flex flex-col z-10 scrollbar-hide relative">
           <div className="w-full max-w-5xl mx-auto my-auto py-4">
+            {/* key: trocar de aba limpa o erro da aba anterior. */}
+            <ErrorBoundary key={activeTabIndex} message={currentT.pageError} retry={currentT.retry}>
             <Suspense fallback={<LoadingPanel />}>
               {activeTabIndex === 0 && (
                 <About
@@ -222,9 +252,10 @@ export default function App() {
               {activeTabIndex === FINANCE_TAB_INDEX && (googleSession ? (
                 <Finance themeClasses={themeClasses} session={googleSession} onSessionExpired={() => setGoogleSession(null)} />
               ) : (
-                <p className="text-center text-sm opacity-70">Entre com Google pelo ícone de perfil para acessar o Controle Financeiro.</p>
+                <p className="text-center text-sm opacity-70">{currentT.financeSignInHint}</p>
               ))}
             </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
 

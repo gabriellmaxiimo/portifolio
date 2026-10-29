@@ -36,6 +36,7 @@ async function googleFetch(accessToken, url, init = {}) {
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', ...init.headers },
   });
   if (response.status === 401) throw new GoogleError('Sessão do Google expirada. Entre novamente.', 401);
+  if (response.status === 429) throw new GoogleError('Muitas requisições ao Google em pouco tempo. Espere 1 minuto e tente de novo.', 429);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new GoogleError(data.error?.message || `Google respondeu HTTP ${response.status}.`, response.status);
   return data;
@@ -115,7 +116,9 @@ async function readEntries(accessToken, spreadsheetId) {
   return (data.values || []).map((values, index) => {
     // Números digitados à mão na planilha chegam como number; o resto do app espera texto.
     const raw = Array.from({ length: ENTRY_COLUMNS.length }, (_, i) => String(values[i] ?? ''));
-    const [date, description, category, type, amount, recurrence] = raw;
+    const [rawDate, description, category, type, amount, recurrence] = raw;
+    // Data digitada direto na planilha vem como número de dias desde 30/12/1899 (o site grava "2026-10-29").
+    const date = /^\d+(\.\d+)?$/.test(rawDate) ? new Date(Date.UTC(1899, 11, 30) + Math.floor(rawDate) * 864e5).toISOString().slice(0, 10) : rawDate;
     // Parcelas antigas guardavam "(2/12)" no fim da descrição, sem a coluna Recorrência.
     const legacy = !recurrence && /\s*\((\d+\/\d+)\)$/.exec(description);
     return {
@@ -131,8 +134,14 @@ async function readEntries(accessToken, spreadsheetId) {
   });
 }
 
-export function addEntries(accessToken, spreadsheetId, entries) {
-  return appendRows(accessToken, spreadsheetId, entries.map(toRow));
+// Devolve os lançamentos criados já com o número da linha, para não precisar reler a planilha.
+// null se o Google não informar onde gravou.
+export async function addEntries(accessToken, spreadsheetId, entries) {
+  const result = await appendRows(accessToken, spreadsheetId, entries.map(toRow));
+  // "Lançamentos!A15:F17" → a primeira linha criada é a 15.
+  const first = Number(/!A(\d+):/.exec(result.updates?.updatedRange ?? '')?.[1]);
+  if (!first) return null;
+  return entries.map((entry, index) => ({ ...entry, recurrence: entry.recurrence ?? '', row: first + index, raw: toRow(entry).map(String) }));
 }
 
 // Edição/exclusão usam o número da linha; se a planilha foi alterada por fora, a linha pode ser outra.

@@ -49,10 +49,12 @@ function toWeeks(days) {
   return weeks;
 }
 
-// Rótulo do mês na coluna em que o mês começa
+// Rótulo do mês na coluna em que o mês começa. Rótulos a menos de 3 colunas um do outro
+// se sobrepõem ("outnov"): some o anterior, que é o mês que mal aparece no começo do gráfico.
 function monthLabels(weeks) {
   let lastMonth = null;
-  return weeks.map((week) => {
+  let lastIndex = -Infinity;
+  const labels = weeks.map((week) => {
     const first = week.find(Boolean);
     const month = first ? new Date(`${first.date}T12:00:00`).getMonth() : null;
     if (month === null || month === lastMonth) return "";
@@ -61,6 +63,12 @@ function monthLabels(weeks) {
       .format(new Date(`${first.date}T12:00:00`))
       .replace(".", "");
   });
+  labels.forEach((label, index) => {
+    if (!label) return;
+    if (index - lastIndex < 3) labels[lastIndex] = "";
+    lastIndex = index;
+  });
+  return labels;
 }
 
 /**

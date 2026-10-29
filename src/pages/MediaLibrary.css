@@ -159,7 +159,8 @@
 
 .media-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+  /* 9rem: num celular de 360px cabem duas capas por linha (com 10rem ficava uma só, enorme). */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
   gap: 0.75rem;
 }
 
@@ -470,17 +471,6 @@
 
   .media-auth {
     justify-content: flex-start;
-  }
-
-  .media-card--list .media-card-content {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .media-card--list .media-rating {
-    grid-column: 1;
-    grid-row: auto;
-    padding-top: 0.5rem;
-    border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   }
 
   .media-card--list .media-card-content {

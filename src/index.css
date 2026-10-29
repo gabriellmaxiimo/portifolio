@@ -41,6 +41,7 @@
   --skeleton-start: #e2e8f0; --skeleton-mid: #f8fafc;
   --surface: #ffffff; --surface-border: #d1d5db;
   --error-text: #b91c1c; --success-text: #15803d;
+  --series-income: #2a78d6; --series-expense: #e34948;
 }
 .theme-cruzeiro {
   --foreground: #ffffff; --muted: #dbeafe;
@@ -61,9 +62,21 @@
 .theme-original, .theme-escuro, .theme-cruzeiro, .theme-cyberpunk {
   --error-text: #fca5a5; --error-background: rgb(127 29 29 / 30%); --error-border: rgb(248 113 113 / 40%);
   --success-text: #4ade80;
+  /* Gráficos do Controle Financeiro: azul/vermelho (verde/vermelho se confundem para daltônicos).
+     Validados com contraste >= 3:1 sobre o solidBg de cada tema, que é o fundo dos gráficos. */
+  --series-income: #3987e5; --series-expense: #e66767;
 }
 
 option { background-color: var(--surface); color: var(--foreground); }
+
+/* Relatório PDF do Controle Financeiro: na impressão some o site e fica só o relatório, em fundo branco. */
+.print-report { display: none; }
+@media print {
+  @page { margin: 14mm; }
+  #root { display: none !important; }
+  .print-report { display: flex; background: #fff none !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .print-report section, .print-report .grid > div { break-inside: avoid; }
+}
 
 /* base-select (Chrome/Edge 135+) deixa estilizar a lista aberta; outros navegadores ficam com a lista nativa nas cores acima. */
 @supports (appearance: base-select) {

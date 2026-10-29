@@ -5,15 +5,59 @@ export function addMonths(date, count) {
   return new Date(year, month - 1 + count, Math.min(day, lastDay)).toLocaleDateString('sv-SE');
 }
 
-// Cada mês vira uma linha; "recurrence" vai para a coluna Recorrência ("Parcela 2/12", "Mensal 2/12").
+// Meses de a até b ("2026-01-31" → "2026-03-01" = 2).
+function monthDiff(a, b) {
+  const [ya, ma] = a.split('-').map(Number);
+  const [yb, mb] = b.split('-').map(Number);
+  return (yb - ya) * 12 + (mb - ma);
+}
+
+// Mensal fixo não tem número nem fim; "encerrado" marca uma série que não deve mais ser completada.
+export const FIXED = 'Mensal';
+export const FIXED_ENDED = 'Mensal encerrado';
+
+// Cada mês vira uma linha; "recurrence" vai para a coluna Recorrência ("Parcela 2/12", "Mensal").
 export function expandRecurrence(entry, repeat, times) {
   if (repeat === 'none') return [entry];
-  const kind = repeat === 'installments' ? 'Parcela' : 'Mensal';
+  // Mensal fixo grava o primeiro mês; extendFixed completa os seguintes.
+  if (repeat === 'monthly') return [{ ...entry, recurrence: FIXED }];
   return Array.from({ length: times }, (_, index) => ({
     ...entry,
     date: addMonths(entry.date, index),
-    recurrence: `${kind} ${index + 1}/${times}`,
+    recurrence: `Parcela ${index + 1}/${times}`,
   }));
+}
+
+// Fixo que continua: "Mensal" ou o formato antigo "Mensal 2/12" gravado na planilha.
+// Marcas só deduzidas (coluna F vazia) ficam de fora: podem ser duas compras iguais por acaso.
+export function isLiveFixed(entry) {
+  return entry.recurrence === FIXED || (/^Mensal \d+\/\d+$/.test(entry.recurrence ?? '') && entry.raw?.[5] === entry.recurrence);
+}
+
+// Linhas que faltam para cada série fixa não encerrada chegar até untilMonth ("2027-10"), após o último mês lançado.
+// O valor segue o do último mês, então mudar o preço do último lançamento muda os próximos.
+// Série = mesma descrição, categoria e tipo; a tela impede criar um segundo fixo ativo igual.
+export function extendFixed(entries, untilMonth) {
+  const groups = new Map();
+  for (const entry of entries) {
+    const live = isLiveFixed(entry);
+    if (!live && entry.recurrence !== FIXED_ENDED) continue;
+    const key = [entry.description, entry.category, entry.type].join('|');
+    const group = groups.get(key) ?? { first: null, last: entry };
+    // O dia vem do primeiro mês ativo, não de uma série antiga já encerrada com o mesmo nome.
+    if (live && !(group.first && group.first.date <= entry.date)) group.first = entry;
+    if (entry.date >= group.last.date) group.last = entry;
+    groups.set(key, group);
+  }
+  const missing = [];
+  for (const { first, last } of groups.values()) {
+    if (!isLiveFixed(last)) continue;
+    for (let n = monthDiff(first.date, last.date) + 1; addMonths(first.date, n).slice(0, 7) <= untilMonth; n++) {
+      const { description, category, type, amount } = last;
+      missing.push({ date: addMonths(first.date, n), description, category, type, amount, recurrence: FIXED });
+    }
+  }
+  return missing;
 }
 
 // "Mensal fixo" antigos não gravavam a coluna Recorrência. Reconhece a sequência que expandRecurrence
@@ -46,8 +90,10 @@ export function inferMonthly(entries) {
   return entries.map((entry) => (marks.has(entry) ? { ...entry, recurrence: marks.get(entry) } : entry));
 }
 
-// "Parcela 2/12" → { kind: 'Parcela', position: 2, total: 12 }
+// "Parcela 2/12" → { kind: 'Parcela', position: 2, total: 12 }; "Mensal" → { kind: 'Mensal', fixed: true }.
+// "Mensal 2/12" é o formato antigo; se estiver gravado na planilha, também é completado (ver isLiveFixed).
 export function parseMark(recurrence) {
+  if (recurrence === FIXED || recurrence === FIXED_ENDED) return { kind: 'Mensal', fixed: true };
   const match = /^(Parcela|Mensal) (\d+)\/(\d+)$/.exec(recurrence ?? '');
   return match ? { kind: match[1], position: Number(match[2]), total: Number(match[3]) } : null;
 }
@@ -57,6 +103,11 @@ export function parseMark(recurrence) {
 export function findSeries(entries, entry) {
   const mark = parseMark(entry.recurrence);
   if (!mark) return [entry];
+  // Mensal não tem fim nem número: a série é tudo com a mesma descrição, categoria e tipo (o valor pode mudar).
+  if (mark.kind === 'Mensal') {
+    return entries.filter((other) => parseMark(other.recurrence)?.kind === 'Mensal'
+      && other.description === entry.description && other.category === entry.category && other.type === entry.type);
+  }
   const firstOfMonth = `${entry.date.slice(0, 7)}-01`;
   return entries.filter((other) => {
     const otherMark = parseMark(other.recurrence);
@@ -78,14 +129,21 @@ export function persistMarks(series, skipRow) {
 // Gravações de uma edição. Série inteira: cada lançamento mantém o seu número e a data só muda
 // se a data do editado mudou (mesmo deslocamento de meses). kind: 'Parcela' | 'Mensal' | '' (sem marca).
 export function buildEditChanges({ editing, series, entry, applyAll, kind, position, times }) {
-  const mark = (own) => (kind ? `${kind} ${own}/${times}` : '');
+  // Fixo encerrado continua encerrado, senão a série voltaria a ser completada. Um mês de fixo renomeado
+  // sozinho sai da série como encerrado, senão viraria uma série nova e duplicaria os meses seguintes.
+  const leavesSeries = !applyAll && parseMark(editing.recurrence)?.kind === 'Mensal'
+    && [entry.description, entry.category, entry.type].join('|') !== [editing.description, editing.category, editing.type].join('|');
+  const mark = (original, own) => {
+    if (kind === 'Mensal') return original.recurrence === FIXED_ENDED || leavesSeries ? FIXED_ENDED : FIXED;
+    return kind ? `${kind} ${own}/${times}` : '';
+  };
   if (!applyAll) {
-    return [{ original: editing, next: { ...entry, recurrence: mark(position) } }, ...persistMarks(series, editing.row)];
+    return [{ original: editing, next: { ...entry, recurrence: mark(editing, position) } }, ...persistMarks(series, editing.row)];
   }
-  const editingPosition = parseMark(editing.recurrence).position;
+  const ordered = [...series].sort((a, b) => a.date.localeCompare(b.date));
   return series.map((original) => {
-    const own = parseMark(original.recurrence).position;
-    const date = entry.date === editing.date ? original.date : addMonths(entry.date, own - editingPosition);
-    return { original, next: { ...entry, date, recurrence: mark(own) } };
+    const own = parseMark(original.recurrence)?.position ?? ordered.indexOf(original) + 1;
+    const date = entry.date === editing.date ? original.date : addMonths(entry.date, monthDiff(editing.date, original.date));
+    return { original, next: { ...entry, date, recurrence: mark(original, own) } };
   });
 }

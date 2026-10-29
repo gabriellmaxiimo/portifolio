@@ -273,7 +273,7 @@ export default function Header() {
                   className="min-w-0 flex-1 bg-transparent border-none outline-none text-xs placeholder:opacity-50"
                 />
                 {searchQuery && (
-                  <button type="button" aria-label={currentT.searchPlaceholder} onClick={() => setSearchQuery('')} className="p-1 opacity-60 hover:opacity-100">
+                  <button type="button" aria-label="Limpar busca" onClick={() => setSearchQuery('')} className="p-1 opacity-60 hover:opacity-100">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}

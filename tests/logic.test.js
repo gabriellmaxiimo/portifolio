@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { addMonths, buildEditChanges, expandRecurrence, findSeries, inferMonthly } from "../src/services/financeDates.js";
+import { addMonths, buildEditChanges, expandRecurrence, extendFixed, findSeries, inferMonthly } from "../src/services/financeDates.js";
 import { waitSeconds } from "../GeminiAPI/api/_gemini.js";
 
 test("parcelas caem no mesmo dia ou no último dia do mês", () => {
@@ -16,7 +16,7 @@ test("parcelado e mensal fixo marcam a recorrência sem mudar a descrição", ()
     expandRecurrence(entry, "installments", 3).map((e) => `${e.date} ${e.description} ${e.recurrence}`),
     ["2026-10-31 TV Parcela 1/3", "2026-11-30 TV Parcela 2/3", "2026-12-31 TV Parcela 3/3"],
   );
-  assert.deepEqual(expandRecurrence(entry, "monthly", 2).map((e) => e.recurrence), ["Mensal 1/2", "Mensal 2/2"]);
+  assert.deepEqual(expandRecurrence(entry, "monthly", 2).map((e) => `${e.date} ${e.recurrence}`), ["2026-10-31 Mensal"]);
   assert.deepEqual(expandRecurrence(entry, "none", 12), [entry]);
 });
 
@@ -73,8 +73,59 @@ test("editar um só grava as marcas deduzidas dos vizinhos", () => {
   });
   assert.deepEqual(
     changes.map(({ original, next }) => `${original.row}:${next.amount}:${next.recurrence}`),
-    ["3:120:Mensal 2/3", "2:99.9:Mensal 1/3", "4:99.9:Mensal 3/3"],
+    ["3:120:Mensal", "2:99.9:Mensal 1/3", "4:99.9:Mensal 3/3"],
   );
+});
+
+test("mensal fixo é completado até o horizonte, com o valor do último mês, e para quando encerrado", () => {
+  const base = { description: "Academia", category: "Saúde", type: "Saída", amount: 100 };
+  const rows = [
+    { ...base, date: "2026-01-31", recurrence: "Mensal" },
+    { ...base, date: "2026-02-28", amount: 120, recurrence: "Mensal" },
+    { ...base, description: "Antiga", date: "2026-01-10", recurrence: "Mensal encerrado" },
+    { ...base, description: "Inferida", date: "2026-01-10", recurrence: "Mensal 1/2", raw: ["", "", "", "", "", ""] }, // só deduzida: não cresce
+  ];
+  assert.deepEqual(
+    extendFixed(rows, "2026-05").map((e) => `${e.date}:${e.amount}:${e.recurrence}`),
+    ["2026-03-31:120:Mensal", "2026-04-30:120:Mensal", "2026-05-31:120:Mensal"],
+  );
+  assert.deepEqual(extendFixed(rows, "2026-02"), []);
+  // Mudar o valor não separa a série.
+  assert.equal(findSeries(rows, rows[0]).length, 2);
+});
+
+test("mensal antigo gravado na planilha também continua para sempre", () => {
+  const base = { description: "Aluguel", category: "Moradia", type: "Saída", amount: 1200 };
+  const rows = [1, 2].map((n) => ({ ...base, date: `2026-0${n}-10`, recurrence: `Mensal ${n}/2`, raw: ["", "", "", "", "", `Mensal ${n}/2`] }));
+  assert.deepEqual(extendFixed(rows, "2026-04").map((e) => `${e.date}:${e.recurrence}`), ["2026-03-10:Mensal", "2026-04-10:Mensal"]);
+});
+
+test("fixo recriado após encerrar usa o dia da série nova", () => {
+  const base = { description: "Academia", category: "Saúde", type: "Saída", amount: 100 };
+  const rows = [
+    { ...base, date: "2026-01-31", recurrence: "Mensal encerrado" },
+    { ...base, date: "2026-04-10", recurrence: "Mensal" },
+  ];
+  assert.deepEqual(extendFixed(rows, "2026-06").map((e) => e.date), ["2026-05-10", "2026-06-10"]);
+});
+
+test("mês de fixo renomeado sozinho sai da série como encerrado", () => {
+  const base = { description: "Academia", category: "Saúde", type: "Saída", amount: 100, raw: ["", "", "", "", "", "Mensal"] };
+  const series = [{ ...base, row: 2, date: "2026-01-05", recurrence: "Mensal" }, { ...base, row: 3, date: "2026-02-05", recurrence: "Mensal" }];
+  const rename = buildEditChanges({ editing: series[1], series, entry: { ...base, description: "Personal" }, applyAll: false, kind: "Mensal" });
+  assert.equal(rename[0].next.recurrence, "Mensal encerrado");
+  const price = buildEditChanges({ editing: series[1], series, entry: { ...base, amount: 120 }, applyAll: false, kind: "Mensal" });
+  assert.equal(price[0].next.recurrence, "Mensal");
+});
+
+test("editar a série fixa não reabre um mês encerrado", () => {
+  const base = { description: "Netflix", category: "Assinaturas", type: "Saída", amount: 40 };
+  const series = [
+    { ...base, row: 2, date: "2026-01-05", recurrence: "Mensal encerrado" },
+    { ...base, row: 3, date: "2026-02-05", recurrence: "Mensal" },
+  ];
+  const changes = buildEditChanges({ editing: series[1], series, entry: { ...base, date: "2026-02-05", amount: 45 }, applyAll: true, kind: "Mensal" });
+  assert.deepEqual(changes.map(({ next }) => `${next.date}:${next.amount}:${next.recurrence}`), ["2026-01-05:45:Mensal encerrado", "2026-02-05:45:Mensal"]);
 });
 
 test("chat bloqueia a 9ª pergunta no mesmo minuto e libera depois", () => {
